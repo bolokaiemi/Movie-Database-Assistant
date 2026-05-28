@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+
+{% block navbar %}
+<nav class="cinema-navbar">
+    <div class="cinema-logo">
+      Stoplight🌟
+    </div>
+    <div class="cinema-nav-links">
+        <a href="/">🏠</a>
+        <a href="/catalog">🎥</a>
+        <a href="/movies/1">📋</a>
+        <a href="/refresh_banners">🔄️</a>
+    </div>
+</nav>
+{% endblock %}
+
+{% block banner_content %}
+{% endblock %}
+
+{% block content %}
+
+<style>
+/* 100% RESTORED ORIGINAL STYLING */
+.movies-page-container {
+    width: 100%;
+    background: #111;
+    color: white;
+    font-family: Arial, sans-serif;
+    min-height: 100vh;
+}
+
+.movies-navbar {
+    padding: 20px;
+    background: black;
+    text-align: center;
+    border-bottom: 1px solid #222;
+}
+
+.movies-navbar h1 {
+    font-size: 28px;
+    color: white;
+}
+
+/* GRID */
+.movies-grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 20px;
+    padding: 40px 160px;
+}
+
+/* MOVIE CARD */
+.movie-card-original {
+    background: #1c1c1c;
+    padding: 10px;
+    border-radius: 10px;
+    text-align: center;
+    transition: 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.movie-card-original:hover {
+    transform: scale(1.05);
+}
+
+/* POSTER */
+.movie-card-original img {
+    width: 100%;
+    height: 240px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+/* PLAY BUTTON WRAPPER (ONLY CLICKABLE AREA) */
+.play-button-overlay {
+    position: absolute;
+    top: 35%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    z-index: 2;
+}
+
+.play-icon-circle {
+    font-size: 40px;
+    color: white;
+    background: rgba(0,0,0,0.6);
+    padding: 10px 14px;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+
+.movie-card-original:hover .play-icon-circle {
+    transform: scale(1.2);
+}
+
+/* THUMBS */
+.original-thumbs {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.original-thumb {
+    font-size: 22px;
+    cursor: pointer;
+    transition: transform 0.2s, opacity 0.2s;
+    opacity: 0.6;
+}
+
+.original-thumb:hover {
+    transform: scale(1.3);
+    opacity: 1;
+}
+
+.original-thumb.active {
+    opacity: 1;
+    transform: scale(1.4);
+}
+
+.original-thumb.up.active {
+    color: #4caf50;
+}
+
+.original-thumb.down.active {
+    color: #f44336;
+}
+
+.original-note-tag {
+    font-size: 12px;
+    color: #bbb;
+    margin-top: 5px;
+}
+
+.original-year-tag {
+    font-size: 14px;
+    color: #888;
+    margin-top: 5px;
+}
+
+/* MODAL */
+.original-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.85);
+    z-index: 9999;
+}
+
+.original-modal-content {
+    background: #222;
+    margin: 5% auto;
+    padding: 20px;
+    width: 90%;
+    max-width: 700px;
+    border-radius: 12px;
+    border: 1px solid #333;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    position: relative;
+}
+
+.original-close-btn {
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    font-size: 28px;
+    cursor: pointer;
+    color: #aaa;
+    transition: color 0.2s;
+}
+
+.original-close-btn:hover {
+    color: white;
+}
+
+.original-modal-content h2 {
+    margin-bottom: 10px;
+    color: white;
+}
+
+.original-modal-content p {
+    color: #bbb;
+    margin-bottom: 10px;
+}
+
+.original-modal-content iframe {
+    border-radius: 8px;
+    border: none;
+}
+
+@media(max-width: 768px) {
+    .movies-grid-container {
+        padding: 20px;
+    }
+}
+</style>
+
+<div class="movies-page-container">
+    <nav class="movies-navbar">
+        <h1>Movie Collection 🎬</h1>
+    </nav>
+
+    <div class="movies-grid-container">
+        {% if movies %}
+            {% for movie in movies %}
+            <div class="movie-card-original">
+                <!-- Play button overlay that opens the modal popup -->
+                <div class="play-button-overlay" onclick="openOriginalModal({{ loop.index0 }})">
+                    <div class="play-icon-circle">▶</div>
+                </div>
+
+                <img src="{{ movie.poster }}" alt="{{ movie.title }}" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'500\' height=\'750\' viewBox=\'0 0 500 750\'><rect width=\'100%\' height=\'100%\' fill=\'%231e293b\'/><text x=\'50%\' y=\'45%\' font-family=\'Arial\' font-size=\'64\' fill=\'%2322d3ee\' text-anchor=\'middle\'>🎬</text><text x=\'50%\' y=\'58%\' font-family=\'Arial\' font-size=\'28\' font-weight=\'bold\' fill=\'%23ffffff\' text-anchor=\'middle\'>{{ movie.title }}</text></svg>';">
+
+                <h3>{{ movie.title }}</h3>
+                <p>⭐ {{ movie.rating }}</p>
+
+                <div class="original-thumbs">
+                    <span class="original-thumb up" onclick="toggleThumb(this, 'up')">👍</span>
+                    <span class="original-thumb down" onclick="toggleThumb(this, 'down')">👎</span>
+                </div>
+
+                <p class="original-year-tag">{{ movie.year }}</p>
+                <div class="original-note-tag">{{ movie.director }}</div>
+            </div>
+
+            <!-- MODAL FOR YOUTUBE POPUP -->
+            <div id="original-modal-{{ loop.index0 }}" class="original-modal">
+                <div class="original-modal-content">
+                    <span class="original-close-btn" onclick="closeOriginalModal({{ loop.index0 }})">&times;</span>
+
+                    <h2>{{ movie.title }}</h2>
+                    <p>{{ movie.year }} | ⭐ {{ movie.rating }}</p>
+                    {% if movie.description %}
+                    <p style="font-size: 14px; line-height: 1.5; color: #ccc; margin-bottom: 20px;">{{ movie.description }}</p>
+                    {% endif %}
+
+                    {% if movie.trailer %}
+                        <iframe width="100%" height="400"
+                            src="{{ movie.trailer }}"
+                            allowfullscreen>
+                        </iframe>
+                    {% else %}
+                        <div style="background: #111; height: 300px; display: flex; align-items: center; justify-content: center; border-radius: 8px;">
+                            <span style="color: #666;">Trailer not available</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="grid-column: 1 / -1; text-align: center; font-size: 24px; padding: 100px 0; color: #888;">
+                No movies found in your collection.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function openOriginalModal(id) {
+    document.getElementById("original-modal-" + id).style.display = "block";
+}
+
+function closeOriginalModal(id) {
+    document.getElementById("original-modal-" + id).style.display = "none";
+    
+    // Stop the video playing when the modal is closed
+    const iframe = document.querySelector("#original-modal-" + id + " iframe");
+    if (iframe) {
+        const src = iframe.src;
+        iframe.src = "";
+        iframe.src = src;
+    }
+}
+
+function toggleThumb(element, type) {
+    const parent = element.parentElement;
+    const thumbs = parent.querySelectorAll('.original-thumb');
+    
+    if (element.classList.contains('active')) {
+        element.classList.remove('active');
+    } else {
+        thumbs.forEach(t => t.classList.remove('active'));
+        element.classList.add('active');
+    }
+}
+
+// Close modal when clicking outside of modal content
+window.onclick = function(event) {
+    const modals = document.querySelectorAll('.original-modal');
+    modals.forEach((modal, index) => {
+        if (event.target == modal) {
+            closeOriginalModal(index);
+        }
+    });
+}
+</script>
+
+{% endblock %}

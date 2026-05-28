@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>🎬 CinemaBot</title>
+      <!-- GOOGLE FONTS -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+
+    <!-- MAIN CSS -->
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}?v=1.2">
+
+    <!-- SWIPER CSS -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Serif+4&display=swap"
+          rel="stylesheet">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='app.css') }}?v=2.0">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='banner.css') }}?v=1.1">
+
+      <link rel="stylesheet"
+          href="{{ url_for('static', filename='side-links.css') }}?v=1.1">
+
+    <style>
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* NAVBAR (STOPLIGHT PUBLIC CINEMA THEME) */
+        .cinema-navbar {
+            width: 100%;
+            padding: 18px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.92);
+            position: sticky;
+            top: 0;
+            z-index: 999;
+        }
+
+        .cinema-logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .cinema-nav-links {
+            display: flex;
+            gap: 25px;
+        }
+
+        .cinema-nav-links a {
+            color: white;
+            transition: 0.3s;
+        }
+
+        .cinema-nav-links a:hover {
+            color: #ff3c3c;
+        }
+
+        /* MOVIE BANNER (STOPLIGHT CINEMA CAROUSEL) */
+        .movie-banner-wrapper {
+            width: 100%;
+            position: relative;
+        }
+
+        .movie-banner-swiper {
+            width: 100%;
+            height: 45vh; /* Reduced height */
+        }
+
+        .movie-banner-slide {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            margin-top: 0px; /* Flush against top navbar */
+        }
+
+
+
+        .movie-banner-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding: 40px; /* Compact padding */
+            background: linear-gradient(
+                to top,
+                rgba(0,0,0,0.95),
+                rgba(0,0,0,0.25),
+                rgba(0,0,0,0.7)
+            );
+        }
+
+        .movie-banner-overlay h1 {
+            font-size: 18px;
+            margin-bottom: 12px;
+            max-width: 500px;
+        }
+
+        .movie-banner-overlay p {
+            max-width: 500px;
+            line-height: 1.5;
+            font-size: 15px;
+            margin-bottom: 15px;
+            height: auto;
+            font-weight: 500;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+
+        .movie-banner-meta {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .movie-banner-meta span {
+            background: rgba(255,255,255,0.12);
+            padding: 4px 12px;
+            border-radius: 999px;
+            backdrop-filter: blur(5px);
+            font-size: 15px;
+        }
+
+        /* PAGE CONTENT */
+        .cinema-page-content {
+            padding: 40px;
+        }
+
+        .close-popup-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 1001;
+            font-weight: bold;
+        }
+
+        /* MOBILE */
+        @media(max-width: 768px) {
+            .cinema-navbar {
+                position: relative;
+                flex-direction: column;
+                gap: 20px;
+                padding: 20px;
+                width: 100%;
+                margin-top: 0;
+            }
+
+            .movie-banner-overlay {
+                padding: 60px 20px;
+            }
+
+            .movie-banner-overlay h1 {
+                font-size: 24px;
+            }
+
+            .movie-banner-overlay p {
+                font-size: 15px;
+                font-weight: bold ;
+            }
+
+            .movie-banner-swiper {
+                height: 60vh;
+                margin-top: 10px;
+
+            }
+        }
+
+        /* CHATBOT POPUP STYLES */
+        .chatbot-header {
+            padding: 20px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+        }
+
+        .header-meta-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        .header-meta-row .language-selector,
+        .header-meta-row form {
+            margin: 0;
+            display: inline-block;
+        }
+
+        .header-meta-row select {
+            background: #1e293b;
+            color: white;
+            border: 1px solid var(--border);
+            padding: 6px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            outline: none;
+        }
+
+        .chatbot-header .header-badge {
+            background: linear-gradient(135deg, #6a5af9, #00d4ff);
+            color: #ffffff;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+            float: none !important;
+            margin-top: 0;
+        }
+
+        /* Compact Swiper Inside Chatbot */
+        .chat-popup .movie-banner-swiper {
+            width: 95%;
+            max-width: 560px;
+            height: 200px;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 10px auto;
+            position: relative;
+        }
+
+        .chat-popup .movie-banner-slide {
+            margin-top: 0 !important;
+            height: 100%;
+            width: 100%;
+        }
+
+        .chat-popup .movie-banner-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .chat-popup .movie-banner-overlay {
+            padding: 15px;
+            background: linear-gradient(
+                to top,
+                rgba(0,0,0,0.92),
+                rgba(0,0,0,0.15)
+            );
+        }
+
+        .chat-popup .movie-banner-overlay h1 {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+
+        .chat-popup .movie-banner-overlay p {
+            font-size: 12px;
+            line-height: 1.4;
+            height: 36px;
+            margin-bottom: 8px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .chat-popup .movie-banner-meta {
+            gap: 8px;
+        }
+
+        .chat-popup .movie-banner-meta span {
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+
+        /* Shift chatbot popup down below the MovieMania top navbar to prevent overlapping */
+        .chat-popup {
+            padding-top: 0 !important;
+            top: 95px !important;
+            bottom: 20px !important;
+            height: auto !important;
+            max-height: calc(100vh - 115px) !important;
+        }
+
+        .chat-popup .chatbot-header {
+            padding: 10px 16px !important;
+            gap: 6px !important;
+        }
+
+        .chat-popup .chatbot-header .logo {
+            font-size: 18px !important;
+        }
+
+        .chat-popup .chatbot-header .tagline {
+            font-size: 11px !important;
+            opacity: 0.7;
+        }
+
+        .chat-popup .chatbot-header .header-meta-row {
+            margin-top: 4px !important;
+        }
+
+        /* Position cinema navbar relative inside the chatbot popup so it does not cover anything */
+        .chat-popup .cinema-navbar {
+            position: relative !important;
+            top: 0 !important;
+            padding: 8px 12px !important;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.95) !important;
+            border-bottom: 1px solid var(--border);
+            margin-top: 0 !important;
+            margin-bottom: 5px !important;
+        }
+
+        .chat-popup .cinema-logo {
+            font-size: 11px !important;
+        }
+
+        .chat-popup .cinema-nav-links {
+            gap: 15px !important;
+        }
+
+        .chat-popup .cinema-nav-links a {
+            font-size: 11px !important;
+            font-weight: 500;
+        }
+
+        /* Compact wrapper margins inside chatbot to maximize scrollable area */
+        .chat-popup .chat-wrapper {
+            margin-top: 5px !important;
+            padding: 5px !important;
+            margin-bottom: 5px !important;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- =========================================
+     1. NAVBAR (DUAL-THEME: DEFAULTS TO MOVIEMANIA NETFLIX-THEME)
+========================================== -->
+{% block navbar %}
+<div class="navbar">
+    <div class="logo">
+        <img src="{{ url_for('static', filename='image/logo.png') }}"
+             style="height:30px; vertical-align:middle;">
+    </div>
+
+    <!-- HAMBURGER & DROPDOWN MENU CONTAINER (RELATIVE) -->
+    <div class="hamburger-container" style="position: relative; display: inline-block;">
+        <div class="hamburger" onclick="toggleMenu()" style="cursor: pointer; font-size: 24px; color: white;">
+            ☰
+        </div>
+        <div id="menuDropdown" class="dropdown" style="position: absolute; top: 100%; left: 0; z-index: 1000; min-width: 150px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px;">
+            <a href="/" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;">Home</a>
+            <a href="#" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;">My List</a>
+            <a href="#" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;">Trending</a>
+            <a href="#" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;">Series</a>
+            <a href="#" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;">Film</a>
+        </div>
+    </div>
+
+    <div class="logo" style="display: flex; align-items: center; gap: 15px;">
+        <span>🎬 MovieMania</span>
+        <a href="/catalog" style="font-size: 13px; color: var(--accent); font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 4px;">🍿 Cinema Portal</a>
+    </div>
+
+    <!-- GENRES -->
+    <div class="categories">
+        <button onclick="toggleCategories(this)">
+            Genres ▼
+        </button>
+        <div id="categoryDropdown"
+             class="dropdown">
+            <a href="#">Action</a>
+            <a href="#">Comedy</a>
+            <a href="#">Horror</a>
+            <a href="#">Sci-Fi</a>
+        </div>
+    </div>
+
+    <!-- NAVBAR LOGIN -->
+    <div id="loginSection"
+         class="navbar-login">
+        <input id="username"
+               type="text"
+               placeholder="Username">
+        <input id="password"
+               type="password"
+               placeholder="Password">
+        <button onclick="login()">
+            Login
+        </button>
+    </div>
+
+
+    <!-- LOGOUT -->
+    <div id="logoutContainer"
+         class="navbar-logout"
+         style="display:none;">
+        <button onclick="logout()"
+                class="logout-btn">
+            Logout
+        </button>
+    </div>
+</div>
+
+{% block movies_content %}{% endblock %}
+{% block catalog_content %}{% endblock %}
+{% endblock %}
+
+
+
+<!-- =========================================
+     2. BANNER (DUAL-THEME: DEFAULTS TO MOVIEMANIA WELCOME-BANNER)
+========================================== -->
+{% block banner_content %}
+<!-- MAIN PAGE-LEVEL SWIPER SLIDESHOW BANNER (STOPLIGHT CINEMA CAROUSEL FOR HOMEPAGE) -->
+<div class="movie-banner-wrapper">
+    <div class="swiper movie-banner-swiper">
+        <div class="swiper-wrapper">
+            {% for movie in banners %}
+            <div class="swiper-slide movie-banner-slide">
+                <img src="{{ movie.banner_url }}" class="movie-banner-image" alt="{{ movie.title }}">
+                <div class="movie-banner-overlay">
+                    <h1>{{ movie.title }}</h1>
+                    <p>{{ movie.overview }}</p>
+                    <div class="movie-banner-meta">
+                        <span>⭐ {{ movie.rating }}</span>
+                        <span>🎬 {{ movie.category }}</span>
+                        <span>📅 {{ movie.release_date }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="swiper-button-next movie-banner-next"></div>
+        <div class="swiper-button-prev movie-banner-prev"></div>
+        <div class="swiper-pagination movie-banner-pagination"></div>
+    </div>
+</div>
+
+<div class="banner">
+    <!-- WELCOME -->
+    <div class="banner-content">
+        <h1>
+            Welcome
+        </h1>
+        <p>
+            Millions of movies, cinema showtimes,
+            and people to discover. Explore now!
+        </p>
+
+        <!-- SEARCH -->
+        <div class="search-bar">
+            <input
+                type="text"
+                id="search"
+                placeholder="🔍 Search movies..."
+                onkeyup="searchMovies()"
+            >
+            <button onclick="searchMovies()">
+                Search
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<!-- =========================================
+     3. MAIN SUB-TEMPLATE PAGE CONTENT
+========================================== -->
+<div class="page-content">
+    {% block content %}
+    {% endblock %}
+</div>
+
+<!-- =========================================
+     4. PERSISTENT CHAT TRIGGER BUTTON
+========================================== -->
+<button class="chat-toggle" onclick="toggleChat()">🎬</button>
+
+<!-- =========================================
+     5. PERSISTENT CHAT POPUP (CLEAN CHAT UI ONLY)
+========================================== -->
+<div id="popup" class="chat-popup">
+    <button onclick="closePopup()" class="close-popup-btn">×</button>
+
+    <header class="chatbot-header">
+        <div class="header-container">
+            <div class="logo" data-mc-text="title">🎬 Cinema<em>Bot</em></div>
+            <div class="tagline" data-mc-text="tagline">Your personal movie assistant</div>
+        </div>
+
+        <div class="header-meta-row">
+            <!-- LANGUAGE SELECTOR -->
+            <div class="language-selector">
+                <select id="languageDropdown">
+                    <option value="en">English</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                </select>
+            </div>
+
+            <!-- MODEL SELECTOR -->
+            <form id="chat-form">
+                <select id="model" name="model">
+                    <option value="gpt-4.1-mini" selected>GPT 4.1 Mini</option>
+                    <option value="gpt-5-mini">GPT 5 Mini</option>
+                    <option value="gpt-4o-mini">GPT 4o Mini</option>
+                </select>
+            </form>
+
+            <!-- GENRES -->
+            <div class="categories" style="position: relative; display: inline-block;">
+                <button onclick="toggleCategories(this)" style="background: #1e293b; color: white; border: 1px solid var(--border); padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 13px; outline: none;">
+                    Genres ▼
+                </button>
+                <div class="dropdown" style="position: absolute; background: #1e293b; border: 1px solid var(--border); border-radius: 8px; padding: 5px 0; z-index: 1002; min-width: 120px; top: 100%; left: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+                    <a href="#" onclick="sendTip('Give me a great action movie recommendation')" style="display: block; padding: 6px 15px; color: white; font-size: 13px; text-decoration: none;">Action</a>
+                    <a href="#" onclick="sendTip('Funniest comedy movies ever')" style="display: block; padding: 6px 15px; color: white; font-size: 13px; text-decoration: none;">Comedy</a>
+                    <a href="#" onclick="sendTip('Scariest horror movies')" style="display: block; padding: 6px 15px; color: white; font-size: 13px; text-decoration: none;">Horror</a>
+                    <a href="#" onclick="sendTip('Best sci-fi films to watch')" style="display: block; padding: 6px 15px; color: white; font-size: 13px; text-decoration: none;">Sci-Fi</a>
+                </div>
+            </div>
+
+            <div class="header-badge">AI Powered</div>
+        </div>
+    </header>
+<!-- THE CONNECTION NAVBAR (STOPLIGHT BRIDGE - IN RIGHTFUL ORIGINAL POSITION BELOW HEADER) -->
+<nav class="cinema-navbar">
+    <div class="cinema-logo">
+      Stoplight🌟
+    </div>
+    <div class="cinema-nav-links">
+        <a href="/" title="Home">🏠</a>
+        <a href="/catalog" title="Catalog">🎥</a>
+        <a href="/movies/1" title="Movie List">📋</a>
+        <a href="/refresh_banners" title="Refresh Banners">🔄</a>
+    </div>
+</nav>
+
+    <!-- QUICK TIPS -->
+    <div class="quick-tips">
+        <div class="tip-btn" onclick="sendTip('Give me a great movie recommendation')">✨ Recommend</div>
+        <div class="tip-btn" onclick="sendTip('Funniest comedy movies ever')">😂 Comedy</div>
+        <div class="tip-btn" onclick="sendTip('Best sci-fi films to watch')">🚀 Sci-Fi</div>
+        <div class="tip-btn" onclick="sendTip('Scariest horror movies')">👻 Horror</div>
+    </div>
+
+    <!-- CHAT WINDOW -->
+    <div class="chat-wrapper">
+        <div class="welcome-message">
+            <h3 data-mc-text="welcome">🎬 Welcome to CinemaBot!</h3>
+            <h4 data-mc-text="recommendations">Ask me for movie recommendations...</h4>
+        </div>
+
+        <div id="chat" class="chat-box"></div>
+    </div>
+
+    <!-- ICON TOOLBAR (ATTACHED RIGHT BEFORE INPUT FIELD) -->
+    <div class="icon-toolbar">
+        <button class="icon-btn" data-action="like" title="Thumbs Up">👍</button>
+        <button class="icon-btn" data-action="dislike" title="Thumbs Down">👎</button>
+        <button class="icon-btn" data-action="share" title="Share">🔗</button>
+        <button class="icon-btn" data-action="ticket" title="Purchase Tickets">👛</button>
+        <button class="icon-btn disabled" data-action="bookmark" title="Bookmark (coming soon)" disabled>🔖</button>
+        <button class="icon-btn disabled" data-action="save" title="Save (coming soon)" disabled>💾</button>
+    </div>
+
+    <!-- INPUT AREA -->
+    <div class="input-area">
+        <button class="voice" onclick="startVoice()">🎤</button>
+        <input id="input" placeholder="Ask something...">
+        <button class="send" onclick="sendMessage()">➤</button>
+    </div>
+</div>
+
+<!-- =========================
+     6. EXTRA CONTENT BLOCKS
+========================= -->
+{% block purchase_content %}{% endblock %}
+{% block catalog__content %}{% endblock %}
+{% block about_content %}{% endblock %}
+{% block contact_content %}{% endblock %}
+{% block school_project_content %}{% endblock %}
+
+
+<!-- =========================
+     6b. CLASSMATE FEEDBACK SECTION (COLLAPSIBLE EXPANDER AT BOTTOM)
+========================= -->
+<div id="feedbackSection" style="display:none; width: 100%; max-width: 800px; margin: 30px auto 10px auto; padding: 0 20px;">
+    <details style="background: rgba(30, 41, 59, 0.35); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.3); transition: 0.3s;">
+        <summary style="cursor: pointer; padding: 16px 20px; font-size: 15px; color: var(--accent); font-weight: 600; list-style: none; display: flex; justify-content: space-between; align-items: center; user-select: none; outline: none;">
+            <span style="display: flex; align-items: center; gap: 8px;">💬 Leave a Comment / Feedback</span>
+            <span style="font-size: 11px; opacity: 0.7; background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 12px; font-weight: normal;">Click to open</span>
+        </summary>
+        <div style="padding: 5px 20px 20px 20px; border-top: 1px solid rgba(255,255,255,0.05);">
+            <textarea id="feedbackText" placeholder="Enter your comments, reviews, or project feedback here..." style="width: 100%; height: 90px; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: #0f172a; color: white; font-size: 13px; outline: none; resize: none; margin-bottom: 12px; font-family: inherit; box-sizing: border-box;"></textarea>
+            <button onclick="submitFeedback()" style="background: var(--accent); color: black; font-weight: bold; border: none; padding: 10px 24px; border-radius: 8px; cursor: pointer; font-size: 13px; transition: 0.3s; box-shadow: 0 4px 10px rgba(255, 60, 60, 0.25);">Submit Feedback</button>
+        </div>
+    </details>
+</div>
+
+<!-- =========================
+     7. CINEMA ANALYTICS PORTAL (HOLISTIC VIEW)
+========================= -->
+<div class="leaderboard" style="padding: 30px 20px; margin-top: 40px;">
+    <h2>📊 Cinema Analytics Dashboard</h2>
+    
+    <!-- Admin view locked (shown when not logged in) -->
+    <div id="analyticsLockedContainer" style="width: 100%; border-radius: 16px; background: rgba(30, 41, 59, 0.25); border: 1px solid var(--border); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); padding: 50px 20px; text-align: center; margin-top: 20px;">
+        <div style="font-size: 54px; margin-bottom: 20px; filter: drop-shadow(0 0 10px rgba(255, 60, 60, 0.2));">🔒</div>
+        <h3 style="color: #ff3c3c; font-size: 20px; margin-bottom: 12px; font-weight: 600;">Cinema Administrator Analytics Portal</h3>
+        <p style="color: #94a3b8; max-width: 550px; margin: 0 auto 25px auto; font-size: 14px; line-height: 1.6;">
+            This holistic dashboard tracks peak interaction times, movie request popularity, sentiment-based satisfaction scores, ticket conversions, and customer intents. Log in to access the administrator dashboard.
+        </p>
+        <button onclick="focusLogin()" style="background: var(--accent); color: black; font-weight: bold; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-size: 14px; transition: 0.3s; box-shadow: 0 4px 12px rgba(255, 60, 60, 0.3);">Go to Admin Login</button>
+    </div>
+
+    <!-- Admin view unlocked (shown when logged in) -->
+    <div id="analyticsDashboardContainer" style="display: none; width: 100%; border-radius: 16px; overflow: hidden; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); padding: 12px; margin-top: 20px; position: relative;">
+        <div style="color: #94a3b8; font-size: 13px; margin-bottom: 15px; padding: 0 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <span style="display: flex; align-items: center; gap: 6px;">🟢 <strong style="color: white;">Live Streamlit Server Connected</strong> &bull; Private Admin View</span>
+            <a href="http://127.0.0.1:8501" target="_blank" style="color: var(--accent); font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 4px; border-bottom: 1px dashed var(--accent);">Open Fullscreen ↗</a>
+        </div>
+        <!-- Embedded Streamlit Analytics Dashboard -->
+        <iframe src="http://127.0.0.1:8501/?embed=true" style="width: 100%; height: 750px; border: none; border-radius: 10px; display: block; background: #0c0f17;" title="Cinema Analytics Dashboard"></iframe>
+    </div>
+</div>
+
+<!-- =========================
+     8. FOOTER
+========================= -->
+<footer class="footer">
+    <div class="footer-container">
+        <!-- COLUMN 1 -->
+        <div class="footer-column">
+            <h2 class="footer-logo">🎬 CinemaBot</h2>
+            <p>Discover movies, trailers, reviews, and cinema experiences.</p>
+        </div>
+
+        <!-- COLUMN 2 -->
+        <div class="footer-column">
+            <h3>Side-links</h3>
+            <ul>
+                <li><a href="{{ url_for('about') }}">About</a></li>
+                <li><a href="{{ url_for('contact') }}">Contact</a></li>
+                <li><a href="{{ url_for('school_project') }}">School-Project</a></li>
+            </ul>
+        </div>
+
+        <!-- COLUMN 3 -->
+        <div class="footer-column">
+            <h3>Information</h3>
+            <p>Year: <span id="footerYear">2026</span></p>
+            <p>Today's Date: <span id="footerDate"></span></p>
+        </div>
+    </div>
+</footer>
+
+<!-- SWIPER JS -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+<script>
+    document.querySelectorAll(".movie-banner-swiper").forEach((el) => {
+        new Swiper(el, {
+            loop: true,
+            autoplay: {
+                delay: 5000,
+                disableOnInteraction: false
+            },
+            pagination: {
+                el: el.querySelector(".movie-banner-pagination"),
+                clickable: true
+            },
+            navigation: {
+                nextEl: el.querySelector(".movie-banner-next"),
+                prevEl: el.querySelector(".movie-banner-prev")
+            },
+            effect: "fade",
+            speed: 1200
+        });
+    });
+</script>
+
+<!-- JAVASCRIPT -->
+<script src="{{ url_for('static', filename='app.js') }}?v=2.0"></script>
+<script src="{{ url_for('static', filename='side-links.js') }}?v=2.0"></script>
+
+</body>
+</html>

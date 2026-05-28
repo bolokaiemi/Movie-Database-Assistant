@@ -1,0 +1,1037 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>users's Movies</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #111;
+    color: white;
+}
+
+/* NAVBAR */
+.navbar {
+    padding: 20px;
+    background:black;
+    text-align: center;
+}
+
+/* GRID */
+.container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 20px;
+    padding: 160px;
+}
+
+/* MOVIE CARD */
+.movie {
+    background: #1c1c1c;
+    padding: 10px;
+    border-radius: 10px;
+    text-align: center;
+    transition: 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.movie:hover {
+    transform: scale(1.05);
+}
+
+/* POSTER */
+.movie img {
+    width: 100%;
+    height: 240px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+/* PLAY BUTTON WRAPPER (ONLY CLICKABLE AREA) */
+.play-button {
+    position: absolute;
+    top: 35%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    z-index: 2;
+}
+
+.play-icon {
+    font-size: 40px;
+    color: white;
+    background: rgba(0,0,0,0.6);
+    padding: 10px 14px;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+
+.movie:hover .play-icon {
+    transform: scale(1.2);
+}
+
+/* FLAG */
+.flag {
+    width: 30px;
+    margin-top: 5px;
+}
+
+/* NOTE */
+.note {
+    font-size: 12px;
+    color: #bbb;
+    margin-top: 5px;
+}
+
+/* MODAL */
+.modal {
+    display: none;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 10;
+}
+
+.modal-content {
+    background: #222;
+    margin: 5% auto;
+    padding: 20px;
+    width: 80%;
+    max-width: 700px;
+}
+
+.close {
+    float: right;
+    font-size: 28px;
+    cursor: pointer;
+}
+
+/* THUMBS */
+.thumbs {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.thumb {
+    font-size: 22px;
+    cursor: pointer;
+    transition: transform 0.2s, opacity 0.2s;
+    opacity: 0.6;
+}
+
+.thumb:hover {
+    transform: scale(1.3);
+    opacity: 1;
+}
+
+.thumb.active {
+    opacity: 1;
+    transform: scale(1.4);
+}
+
+.thumb.up.active {
+    color: #4caf50;
+}
+
+.thumb.down.active {
+    color: #f44336;
+}
+</style>
+</head>
+
+<body>
+
+<nav class="navbar">
+<h1>users's Movie Collection 🎬</h1>
+</nav>
+
+<div class="container">
+
+<div class="movie">
+
+    <!-- ONLY THIS IS CLICKABLE -->
+    <div class="play-button" onclick="openModal(0)">
+        <div class="play-icon">▶</div>
+    </div>
+
+    <img src="https://en.wikipedia.org/wiki/Mad_Max:_Fury_Road">
+
+    <h3>Mad Max: Fury Road</h3>
+    <p>⭐ 8.1</p>
+
+    <div class="thumbs">
+        <span class="thumb up">👍</span>
+        <span class="thumb down">👎</span>
+    </div>
+
+    <p>2015</p>
+
+    
+
+    <div class="note"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal0" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal(0)">&times;</span>
+
+        <h2>Mad Max: Fury Road</h2>
+        <p>2015</p>
+        <p>⭐ 8.1</p>
+
+        <iframe width="100%" height="400"
+            src="https://www.youtube.com/embed/woHTUsl66BY?si=p0Uxo5xmDKSiPZNF"
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>
+</div>
+
+<div class="movie">
+
+    <!-- ONLY THIS IS CLICKABLE -->
+    <div class="play-button" onclick="openModal(1)">
+        <div class="play-icon">▶</div>
+    </div>
+
+    <img src="https://upload.wikimedia.org/wikipedia/en/9/98/John_Wick_TeaserPoster.jpg">
+
+    <h3>John Wick</h3>
+    <p>⭐ 7.5</p>
+
+    <div class="thumbs">
+        <span class="thumb up">👍</span>
+        <span class="thumb down">👎</span>
+    </div>
+
+    <p>2014</p>
+
+    
+
+    <div class="note"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal1" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal(1)">&times;</span>
+
+        <h2>John Wick</h2>
+        <p>2014</p>
+        <p>⭐ 7.5</p>
+
+        <iframe width="100%" height="400"
+            src="https://www.youtube.com/embed/inhF1DSNUAw?si=A-WMWibK2nN1UnTR"
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>
+</div>
+
+<div class="movie">
+
+    <!-- ONLY THIS IS CLICKABLE -->
+    <div class="play-button" onclick="openModal(2)">
+        <div class="play-icon">▶</div>
+    </div>
+
+    <img src="https://upload.wikimedia.org/wikipedia/en/1/1c/The_Dark_Knight_%282008_film%29.jpg">
+
+    <h3>The Dark Knight</h3>
+    <p>⭐ 9.1</p>
+
+    <div class="thumbs">
+        <span class="thumb up">👍</span>
+        <span class="thumb down">👎</span>
+    </div>
+
+    <p>2008</p>
+
+    
+
+    <div class="note"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal2" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal(2)">&times;</span>
+
+        <h2>The Dark Knight</h2>
+        <p>2008</p>
+        <p>⭐ 9.1</p>
+
+        <iframe width="100%" height="400"
+            src="https://www.youtube.com/embed/g8evyE9TuYk?si=bKuxET2vbf64zre2"
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>
+</div>
+
+<div class="movie">
+
+    <!-- ONLY THIS IS CLICKABLE -->
+    <div class="play-button" onclick="openModal(3)">
+        <div class="play-icon">▶</div>
+    </div>
+
+    <img src="https://upload.wikimedia.org/wikipedia/en/f/ff/MI_%E2%80%93_Fallout.jpg">
+
+    <h3>Mission: Impossible - Fallout</h3>
+    <p>⭐ 7.7</p>
+
+    <div class="thumbs">
+        <span class="thumb up">👍</span>
+        <span class="thumb down">👎</span>
+    </div>
+
+    <p>2018</p>
+
+    
+
+    <div class="note"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal3" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal(3)">&times;</span>
+
+        <h2>Mission: Impossible - Fallout</h2>
+        <p>2018</p>
+        <p>⭐ 7.7</p>
+
+        <iframe width="100%" height="400"
+            src="https://www.youtube.com/embed/AmsbvM3wfRg?si=7GltDmP0vaP15bSh"
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>
+</div>
+
+<div class="movie">
+
+    <!-- ONLY THIS IS CLICKABLE -->
+    <div class="play-button" onclick="openModal(4)">
+        <div class="play-icon">▶</div>
+    </div>
+
+    <img src="https://upload.wikimedia.org/wikipedia/en/f/fb/Gladiator_%282000_film_poster%29.png">
+
+    <h3>Gladiator</h3>
+    <p>⭐ 8.5</p>
+
+    <div class="thumbs">
+        <span class="thumb up">👍</span>
+        <span class="thumb down">👎</span>
+    </div>
+
+    <p>2000</p>
+
+    
+
+    <div class="note"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal4" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal(4)">&times;</span>
+
+        <h2>Gladiator</h2>
+        <p>2000</p>
+        <p>⭐ 8.5</p>
+
+        <iframe width="100%" height="400"
+            src="https://www.youtube.com/embed/P5ieIbInFpg?si=P7eAv4HRjn6bLRcv"
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>
+</div>
+
+<div class="movie">
+
+    <!-- ONLY THIS IS CLICKABLE -->
+    <div class="play-button" onclick="openModal(5)">
+        <div class="play-icon">▶</div>
+    </div>
+
+    <img src="https://upload.wikimedia.org/wikipedia/en/2/2e/Inception_%282010%29_theatrical_poster.jpg">
+
+    <h3>Inception</h3>
+    <p>⭐ 8.8</p>
+
+    <div class="thumbs">
+        <span class="thumb up">👍</span>
+        <span class="thumb down">👎</span>
+    </div>
+
+    <p>2010</p>
+
+    
+
+    <div class="note"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal5" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal(5)">&times;</span>
+
+        <h2>Inception</h2>
+        <p>2010</p>
+        <p>⭐ 8.8</p>
+
+        <iframe width="100%" height="400"
+            src="https://www.youtube.com/embed/YoHD9XEInc0?si=vx9GAOwjLm36MGFJ"
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>
+</div>
+
+<div class="movie">
+
+    <!-- ONLY THIS IS CLICKABLE -->
+    <div class="play-button" onclick="openModal(6)">
+        <div class="play-icon">▶</div>
+    </div>
+
+    <img src="https://upload.wikimedia.org/wikipedia/en/b/bc/Interstellar_film_poster.jpg">
+
+    <h3>Interstellar</h3>
+    <p>⭐ 8.7</p>
+
+    <div class="thumbs">
+        <span class="thumb up">👍</span>
+        <span class="thumb down">👎</span>
+    </div>
+
+    <p>2014</p>
+
+    
+
+    <div class="note"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal6" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal(6)">&times;</span>
+
+        <h2>Interstellar</h2>
+        <p>2014</p>
+        <p>⭐ 8.7</p>
+
+        <iframe width="100%" height="400"
+            src="https://www.youtube.com/embed/2LqzF5WauAw?si=Ai1KNacSNal_CGX2"
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>
+</div>
+
+<div class="movie">
+
+    <!-- ONLY THIS IS CLICKABLE -->
+    <div class="play-button" onclick="openModal(7)">
+        <div class="play-icon">▶</div>
+    </div>
+
+    <img src="https://upload.wikimedia.org/wikipedia/en/9/9b/Blade_Runner_2049_poster.png">
+
+    <h3>Blade Runner 2049</h3>
+    <p>⭐ 8.0</p>
+
+    <div class="thumbs">
+        <span class="thumb up">👍</span>
+        <span class="thumb down">👎</span>
+    </div>
+
+    <p>2017</p>
+
+    
+
+    <div class="note"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal7" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal(7)">&times;</span>
+
+        <h2>Blade Runner 2049</h2>
+        <p>2017</p>
+        <p>⭐ 8.0</p>
+
+        <iframe width="100%" height="400"
+            src="https://www.youtube.com/embed/gCcx85zbxz4?si=8wBTa6-aCWW_2xnf"
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>
+</div>
+
+<div class="movie">
+
+    <!-- ONLY THIS IS CLICKABLE -->
+    <div class="play-button" onclick="openModal(8)">
+        <div class="play-icon">▶</div>
+    </div>
+
+    <img src="https://upload.wikimedia.org/wikipedia/en/d/db/The_Matrix.png">
+
+    <h3>The Matrix</h3>
+    <p>⭐ 8.7</p>
+
+    <div class="thumbs">
+        <span class="thumb up">👍</span>
+        <span class="thumb down">👎</span>
+    </div>
+
+    <p>1999</p>
+
+    
+
+    <div class="note"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal8" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal(8)">&times;</span>
+
+        <h2>The Matrix</h2>
+        <p>1999</p>
+        <p>⭐ 8.7</p>
+
+        <iframe width="100%" height="400"
+            src="https://www.youtube.com/embed/tGgCqGm_6Hs?si=bEGiIeANLonIj2AG"
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>
+</div>
+
+<div class="movie">
+
+    <!-- ONLY THIS IS CLICKABLE -->
+    <div class="play-button" onclick="openModal(9)">
+        <div class="play-icon">▶</div>
+    </div>
+
+    <img src="https://upload.wikimedia.org/wikipedia/en/d/df/Arrival%2C_Movie_Poster.jpg">
+
+    <h3>Arrival</h3>
+    <p>⭐ 7.9</p>
+
+    <div class="thumbs">
+        <span class="thumb up">👍</span>
+        <span class="thumb down">👎</span>
+    </div>
+
+    <p>2016</p>
+
+    
+
+    <div class="note"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal9" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal(9)">&times;</span>
+
+        <h2>Arrival</h2>
+        <p>2016</p>
+        <p>⭐ 7.9</p>
+
+        <iframe width="100%" height="400"
+            src="https://www.youtube.com/embed/m4EckokDObw?si=6ruJU8M7u_xP8fGs"
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>
+</div>
+
+<div class="movie">
+
+    <!-- ONLY THIS IS CLICKABLE -->
+    <div class="play-button" onclick="openModal(10)">
+        <div class="play-icon">▶</div>
+    </div>
+
+    <img src="https://upload.wikimedia.org/wikipedia/en/1/18/Titanic_%281997_film%29_poster.png">
+
+    <h3>Titanic</h3>
+    <p>⭐ 8.0</p>
+
+    <div class="thumbs">
+        <span class="thumb up">👍</span>
+        <span class="thumb down">👎</span>
+    </div>
+
+    <p>1997</p>
+
+    
+
+    <div class="note"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal10" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal(10)">&times;</span>
+
+        <h2>Titanic</h2>
+        <p>1997</p>
+        <p>⭐ 8.0</p>
+
+        <iframe width="100%" height="400"
+            src="https://www.youtube.com/embed/kVrqfYjkTdQ?si=m2QDsqLwKFwl21SS"
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>
+</div>
+
+<div class="movie">
+
+    <!-- ONLY THIS IS CLICKABLE -->
+    <div class="play-button" onclick="openModal(11)">
+        <div class="play-icon">▶</div>
+    </div>
+
+    <img src="https://en.wikipedia.org/wiki/The_Notebook">
+
+    <h3>The Notebook</h3>
+    <p>⭐ 7.8</p>
+
+    <div class="thumbs">
+        <span class="thumb up">👍</span>
+        <span class="thumb down">👎</span>
+    </div>
+
+    <p>2004</p>
+
+    
+
+    <div class="note"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal11" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal(11)">&times;</span>
+
+        <h2>The Notebook</h2>
+        <p>2004</p>
+        <p>⭐ 7.8</p>
+
+        <iframe width="100%" height="400"
+            src="https://www.youtube.com/embed/RE-C_QQ1PLI?si=nHL-s5Lr0OPOhW_Y" title="YouTube video player"
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>
+</div>
+
+<div class="movie">
+
+    <!-- ONLY THIS IS CLICKABLE -->
+    <div class="play-button" onclick="openModal(12)">
+        <div class="play-icon">▶</div>
+    </div>
+
+    <img src="https://upload.wikimedia.org/wikipedia/en/a/ab/La_La_Land_%28film%29.png">
+
+    <h3>La La Land</h3>
+    <p>⭐ 8.0</p>
+
+    <div class="thumbs">
+        <span class="thumb up">👍</span>
+        <span class="thumb down">👎</span>
+    </div>
+
+    <p>2016</p>
+
+    
+
+    <div class="note"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal12" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal(12)">&times;</span>
+
+        <h2>La La Land</h2>
+        <p>2016</p>
+        <p>⭐ 8.0</p>
+
+        <iframe width="100%" height="400"
+            src="https://www.youtube.com/embed/0pdqf4P9MB8?si=4IZ3phrRKRNzcnTH"
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>
+</div>
+
+<div class="movie">
+
+    <!-- ONLY THIS IS CLICKABLE -->
+    <div class="play-button" onclick="openModal(13)">
+        <div class="play-icon">▶</div>
+    </div>
+
+    <img src="https://en.wikipedia.org/wiki/Pride_%26_Prejudice_(2005_film)#/media/File:Prideandprejudiceposter.jpg">
+
+    <h3>Pride</h3>
+    <p>⭐ 7.8</p>
+
+    <div class="thumbs">
+        <span class="thumb up">👍</span>
+        <span class="thumb down">👎</span>
+    </div>
+
+    <p>2014</p>
+
+    
+
+    <div class="note"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal13" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal(13)">&times;</span>
+
+        <h2>Pride</h2>
+        <p>2014</p>
+        <p>⭐ 7.8</p>
+
+        <iframe width="100%" height="400"
+            src="https://www.youtube.com/embed/Ur_DIHs92NM?si=bolHnJK499jgVdFE"
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>
+</div>
+
+<div class="movie">
+
+    <!-- ONLY THIS IS CLICKABLE -->
+    <div class="play-button" onclick="openModal(14)">
+        <div class="play-icon">▶</div>
+    </div>
+
+    <img src="https://upload.wikimedia.org/wikipedia/en/d/da/Before_Sunrise_poster.jpg">
+
+    <h3>Before Sunrise</h3>
+    <p>⭐ 8.1</p>
+
+    <div class="thumbs">
+        <span class="thumb up">👍</span>
+        <span class="thumb down">👎</span>
+    </div>
+
+    <p>1995</p>
+
+    
+
+    <div class="note"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal14" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal(14)">&times;</span>
+
+        <h2>Before Sunrise</h2>
+        <p>1995</p>
+        <p>⭐ 8.1</p>
+
+        <iframe width="100%" height="400"
+            src="https://www.youtube.com/embed/Kv6JWoVKlGY?si=WeiZwBrKmRLRfQaT"
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>
+</div>
+
+<div class="movie">
+
+    <!-- ONLY THIS IS CLICKABLE -->
+    <div class="play-button" onclick="openModal(15)">
+        <div class="play-icon">▶</div>
+    </div>
+
+    <img src="https://upload.wikimedia.org/wikipedia/en/8/8c/The_Conjuring_poster.jpg">
+
+    <h3>The Conjuring</h3>
+    <p>⭐ 7.5</p>
+
+    <div class="thumbs">
+        <span class="thumb up">👍</span>
+        <span class="thumb down">👎</span>
+    </div>
+
+    <p>2013</p>
+
+    
+
+    <div class="note"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal15" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal(15)">&times;</span>
+
+        <h2>The Conjuring</h2>
+        <p>2013</p>
+        <p>⭐ 7.5</p>
+
+        <iframe width="100%" height="400"
+            src="https://www.youtube.com/embed/Gb-jRz7HWqs?si=7Nlfa5qO6azS9haf"
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>
+</div>
+
+<div class="movie">
+
+    <!-- ONLY THIS IS CLICKABLE -->
+    <div class="play-button" onclick="openModal(16)">
+        <div class="play-icon">▶</div>
+    </div>
+
+    <img src="a">
+
+    <h3>Iron Man 3</h3>
+    <p>⭐ 7.1</p>
+
+    <div class="thumbs">
+        <span class="thumb up">👍</span>
+        <span class="thumb down">👎</span>
+    </div>
+
+    <p>2013</p>
+
+    
+
+    <div class="note"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal16" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal(16)">&times;</span>
+
+        <h2>Iron Man 3</h2>
+        <p>2013</p>
+        <p>⭐ 7.1</p>
+
+        <iframe width="100%" height="400"
+            src="a"
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>
+</div>
+
+<div class="movie">
+
+    <!-- ONLY THIS IS CLICKABLE -->
+    <div class="play-button" onclick="openModal(17)">
+        <div class="play-icon">▶</div>
+    </div>
+
+    <img src="https://upload.wikimedia.org/wikipedia/en/d/d9/Hereditary.png">
+
+    <h3>Hereditary</h3>
+    <p>⭐ 7.3</p>
+
+    <div class="thumbs">
+        <span class="thumb up">👍</span>
+        <span class="thumb down">👎</span>
+    </div>
+
+    <p>2018</p>
+
+    
+
+    <div class="note"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal17" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal(17)">&times;</span>
+
+        <h2>Hereditary</h2>
+        <p>2018</p>
+        <p>⭐ 7.3</p>
+
+        <iframe width="100%" height="400"
+            src="https://www.youtube.com/embed/bmM84k_0l4U?si=Lvu7QF7gmdscJA5U"
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>
+</div>
+
+<div class="movie">
+
+    <!-- ONLY THIS IS CLICKABLE -->
+    <div class="play-button" onclick="openModal(18)">
+        <div class="play-icon">▶</div>
+    </div>
+
+    <img src="https://en.wikipedia.org/wiki/Get_Out#/media/File:Get_Out_poster.png">
+
+    <h3>Get Out</h3>
+    <p>⭐ 7.8</p>
+
+    <div class="thumbs">
+        <span class="thumb up">👍</span>
+        <span class="thumb down">👎</span>
+    </div>
+
+    <p>2017</p>
+
+    
+
+    <div class="note"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal18" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal(18)">&times;</span>
+
+        <h2>Get Out</h2>
+        <p>2017</p>
+        <p>⭐ 7.8</p>
+
+        <iframe width="100%" height="400"
+            src="https://www.youtube.com/embed/hPubJXaTQAw?si=5qszPeYzzyVleqry"
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>
+</div>
+
+<div class="movie">
+
+    <!-- ONLY THIS IS CLICKABLE -->
+    <div class="play-button" onclick="openModal(19)">
+        <div class="play-icon">▶</div>
+    </div>
+
+    <img src="https://upload.wikimedia.org/wikipedia/en/a/a0/A_Quiet_Place_film_poster.png">
+
+    <h3>A Quiet Place</h3>
+    <p>⭐ 7.5</p>
+
+    <div class="thumbs">
+        <span class="thumb up">👍</span>
+        <span class="thumb down">👎</span>
+    </div>
+
+    <p>2018</p>
+
+    
+
+    <div class="note"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal19" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal(19)">&times;</span>
+
+        <h2>A Quiet Place</h2>
+        <p>2018</p>
+        <p>⭐ 7.5</p>
+
+        <iframe width="100%" height="400"
+            src="https://www.youtube.com/embed/WR7cc5t7tv8?si=vwWmFZe5KqtMtRr_"
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>
+</div>
+
+<div class="movie">
+
+    <!-- ONLY THIS IS CLICKABLE -->
+    <div class="play-button" onclick="openModal(20)">
+        <div class="play-icon">▶</div>
+    </div>
+
+    <img src="https://en.wikipedia.org/wiki/It_(2017_film)#/media/File:It_(2017)_poster.jpg">
+
+    <h3>It</h3>
+    <p>⭐ 7.3</p>
+
+    <div class="thumbs">
+        <span class="thumb up">👍</span>
+        <span class="thumb down">👎</span>
+    </div>
+
+    <p>2017</p>
+
+    
+
+    <div class="note"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal20" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal(20)">&times;</span>
+
+        <h2>It</h2>
+        <p>2017</p>
+        <p>⭐ 7.3</p>
+
+        <iframe width="100%" height="400"
+            src="https://www.youtube.com/embed/8i3_2iGTQi8?si=Pf-GUttu_gNZ4Wce"
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>
+</div>
+
+</div>
+
+<script>
+function openModal(id){
+    document.getElementById("modal"+id).style.display="block";
+}
+
+function closeModal(id){
+    document.getElementById("modal"+id).style.display="none";
+}
+</script>
+
+</body>
+</html>

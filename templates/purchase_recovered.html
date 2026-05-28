@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>{{ movie.name }} | Online Cinema Checkout</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    background:#0b0b0b;
+    font-family:Arial, sans-serif;
+    color:white;
+}
+
+.topbar{
+    width:100%;
+    padding:15px 30px;
+    background:#121212;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border-bottom:1px solid #222;
+}
+
+.clock{
+    color:#00ff90;
+    font-weight:bold;
+}
+
+.container{
+    width:95%;
+    max-width:1100px;
+    margin:30px auto;
+    display:grid;
+    grid-template-columns:1fr 380px;
+    gap:25px;
+}
+
+.left-panel{
+    background:#171717;
+    border-radius:14px;
+    padding:25px;
+}
+
+.right-panel{
+    background:#171717;
+    border-radius:14px;
+    padding:25px;
+    height:fit-content;
+    position:sticky;
+    top:20px;
+}
+
+.movie-card{
+    display:flex;
+    gap:20px;
+    align-items:center;
+    margin-bottom:30px;
+}
+
+.poster{
+    width:160px;
+    height:230px;
+    border-radius:12px;
+    object-fit:cover;
+}
+
+
+const seniorTickets = document.getElementById("seniorTickets");
+
+const totalPrice = document.getElementById("totalPrice");
+const ticketCount = document.getElementById("ticketCount");
+const comboPrice = document.getElementById("comboPrice");
+
+const comboInputs = document.querySelectorAll('input[name="combo"]');
+
+function calculateTotal(){
+
+    const adult = parseInt(adultTickets.value) || 0;
+    const child = parseInt(childTickets.value) || 0;
+    const senior = parseInt(seniorTickets.value) || 0;
+
+    const ticketsTotal =
+        (adult * 12) +
+        (child * 8) +
+        (senior * 10);
+
+    const totalTickets =
+        adult + child + senior;
+
+    let selectedCombo = 0;
+
+    comboInputs.forEach(combo => {
+
+        if(combo.checked){
+            selectedCombo = parseInt(combo.value);
+        }
+
+    });
+
+    const bookingFee = 2;
+
+    const finalTotal =
+        ticketsTotal +
+        selectedCombo +
+        bookingFee;
+
+    totalPrice.innerText = finalTotal;
+
+    ticketCount.innerText = totalTickets;
+
+    comboPrice.innerText = "$" + selectedCombo;
+
+}
+
+adultTickets.addEventListener("input", calculateTotal);
+childTickets.addEventListener("input", calculateTotal);
+seniorTickets.addEventListener("input", calculateTotal);
+
+comboInputs.forEach(combo => {
+    combo.addEventListener("change", calculateTotal);
+});
+
+function checkout(){
+
+    const total = totalPrice.innerText;
+
+    alert(
+        "Redirecting to secure payment...\n\nTotal Amount: $" + total
+    );
+
+}
+
+</script>
+
+</body>
+</html>
+
+{% endblock %}

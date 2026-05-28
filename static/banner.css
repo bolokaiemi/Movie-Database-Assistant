@@ -1,0 +1,371 @@
+/* ========================================= */
+/* MOVIE GLOBAL BANNER */
+/* static/css/banner.css */
+/* ========================================= */
+
+/* ========================================= */
+/* WRAPPER */
+/* ========================================= */
+
+.movie-banner-wrapper {
+
+    width: 100%;
+    position: relative;
+
+    overflow: hidden;
+
+    background: #000;
+}
+
+/* ========================================= */
+/* SWIPER CONTAINER */
+/* ========================================= */
+
+.movie-banner-swiper {
+
+    width: 100%;
+    height: 45vh;
+}
+
+/* ========================================= */
+/* EACH SLIDE */
+/* ========================================= */
+
+.movie-banner-slide {
+
+    position: relative;
+
+    width: 100%;
+    height: 100%;
+
+    overflow: hidden;
+}
+
+/* ========================================= */
+/* IMAGE */
+/* ========================================= */
+
+.movie-banner-image {
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+
+    transform: scale(1);
+
+    transition: transform 8s ease;
+}
+
+/* Smooth zoom effect */
+
+.swiper-slide-active .movie-banner-image {
+
+    transform: scale(1.05);
+}
+
+/* ========================================= */
+/* DARK OVERLAY */
+/* ========================================= */
+
+.movie-banner-overlay {
+
+    position: absolute;
+
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+
+    padding: 80px;
+
+    background:
+        linear-gradient(
+            to top,
+            rgba(0, 0, 0, 0.95) 0%,
+            rgba(0, 0, 0, 0.45) 50%,
+            rgba(0, 0, 0, 0.75) 100%
+        );
+}
+
+/* ========================================= */
+/* TITLE */
+/* ========================================= */
+
+.movie-banner-overlay h1 {
+
+    font-size: 12px;
+    font-weight: 700;
+
+    margin-bottom: 20px;
+
+    max-width: 750px;
+
+    line-height: 1.1;
+
+    text-shadow:
+        0 2px 10px rgba(0,0,0,0.7);
+}
+
+/* ========================================= */
+/* DESCRIPTION */
+/* ========================================= */
+
+.movie-banner-overlay p {
+
+    max-width: 400px;
+
+    line-height: 1.2;
+
+    font-size: 12px;
+
+    margin-bottom: 30px;
+
+    color: rgba(255,255,255,0.92);
+    height: 150px;
+    font-weight: bold;
+}
+
+/* ========================================= */
+/* META TAGS */
+/* ========================================= */
+
+.movie-banner-meta {
+
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 30px;
+
+    flex-wrap: wrap;
+}
+
+.movie-banner-meta span {
+
+    background: rgba(99, 94, 94, 0.12);
+
+    border: 1px solid rgba(255,255,255,0.08);
+
+    padding: 4px;
+    margin-top: 15px;
+
+    border-radius: 999px;
+
+    backdrop-filter: blur(8px);
+
+    font-size: 15px;
+    font-weight: 500;
+
+    color: white;
+}
+
+/* ========================================= */
+/* SWIPER BUTTONS */
+/* ========================================= */
+
+.movie-banner-next,
+.movie-banner-prev {
+
+    color: black !important;
+
+    width: 55px !important;
+    height: 55px !important;
+
+    border-radius: 50%;
+
+    background: rgba(13, 13, 13, 0.45);
+
+    backdrop-filter: blur(8px);
+
+    transition: 0.3s;
+}
+
+.movie-banner-next:hover,
+.movie-banner-prev:hover {
+
+    background: rgba(255,215,204,0.18);
+
+    transform: scale(1.08);
+}
+
+/* ========================================= */
+/* SWIPER ARROW SIZE */
+/* ========================================= */
+
+.movie-banner-next::after,
+.movie-banner-prev::after {
+
+    font-size: 20px !important;
+    font-weight: bold;
+}
+
+/* ========================================= */
+/* PAGINATION */
+/* ========================================= */
+
+.movie-banner-pagination {
+
+    bottom: 50px !important;
+}
+
+.movie-banner-pagination .swiper-pagination-bullet {
+
+
+    width: 12px;
+    height: 12px;
+
+    background: rgb(158, 123, 87);
+
+    opacity: 0.25;
+
+    transition: 0.3s;
+}
+
+.movie-banner-pagination .swiper-pagination-bullet-active {
+
+    background: rgba(200, 200, 200, 0.12);
+
+    width: 30px;
+
+    border-radius: 999px;
+}
+
+/* ========================================= */
+/* CONTENT ANIMATION */
+/* ========================================= */
+
+.movie-banner-overlay h1,
+.movie-banner-overlay p,
+.movie-banner-meta {
+
+    opacity: 0;
+    position: relative;
+    z-index: 20;
+
+    transform: translateY(30px);
+
+    transition:
+        opacity 0.8s ease,
+        transform 0.8s ease;
+}
+
+.swiper-slide-active .movie-banner-overlay h1 {
+
+    opacity: 1;
+
+    transform: translateY(0);
+
+    transition-delay: 0.2s;
+}
+
+.swiper-slide-active .movie-banner-overlay p {
+
+    opacity: 1;
+
+    transform: translateY(0);
+
+    transition-delay: 0.45s;
+}
+
+.swiper-slide-active .movie-banner-meta {
+
+    opacity: 1;
+
+    transform: translateY(0);
+
+    transition-delay: 0.7s;
+}
+
+/* ========================================= */
+/* RESPONSIVE */
+/* ========================================= */
+
+@media(max-width: 992px) {
+
+    .movie-banner-overlay {
+
+        padding: 60px 40px;
+    }
+
+    .movie-banner-overlay h1 {
+
+        font-size: 48px;
+    }
+
+    .movie-banner-overlay p {
+
+        font-size: 16px;
+    }
+}
+
+@media(max-width: 768px) {
+
+    .movie-banner-swiper {
+
+        height: 70vh;
+    }
+
+    .movie-banner-overlay {
+
+        padding: 40px 20px;
+    }
+
+    .movie-banner-overlay h1 {
+
+        font-size: 34px;
+    }
+
+    .movie-banner-overlay p {
+
+        font-size: 15px;
+
+        margin-bottom: 20px;
+    }
+
+    .movie-banner-meta {
+
+        gap: 12px;
+    }
+
+    .movie-banner-meta span {
+
+        font-size: 13px;
+
+        padding: 8px 14px;
+    }
+
+    .movie-banner-next,
+    .movie-banner-prev {
+
+        width: 45px !important;
+        height: 45px !important;
+    }
+}
+
+@media(max-width: 480px) {
+
+    .movie-banner-swiper {
+
+        height: 60vh;
+    }
+
+    .movie-banner-overlay h1 {
+
+        font-size: 28px;
+    }
+
+    .movie-banner-overlay p {
+
+        display: none;
+    }
+
+    .movie-banner-meta {
+
+        gap: 10px;
+    }
+}

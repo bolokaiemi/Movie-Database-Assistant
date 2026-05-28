@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <title>Cinema Purchase</title>
+
+  <!-- QR Code Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='purchase.css') }}">
+
+  <div class="purchase-page-container">
+
+    <h1>Movie Ticket & Snack Purchase</h1>
+
+    <!-- TICKETS -->
+    <section class="card">
+      <h2>Tickets</h2>
+
+      <div class="item-row">
+        <label>
+          <input type="checkbox" class="item" data-price="12">
+          Adult Ticket ($12)
+        </label>
+        <input type="number" class="quantity" min="1" value="1">
+      </div>
+
+      <div class="item-row">
+        <label>
+          <input type="checkbox" class="item" data-price="8">
+          Child Ticket ($8)
+        </label>
+        <input type="number" class="quantity" min="1" value="1">
+      </div>
+
+      <div class="item-row">
+        <label>
+          <input type="checkbox" class="item" data-price="10">
+          Senior Ticket ($10)
+        </label>
+        <input type="number" class="quantity" min="1" value="1">
+      </div>
+    </section>
+
+    <!-- SNACKS -->
+    <section class="card">
+      <h2>Snacks</h2>
+
+      <div class="item-row">
+        <label>
+          <input type="checkbox" class="item" data-price="7">
+          Large Popcorn ($7)
+        </label>
+        <input type="number" class="quantity" min="1" value="1">
+      </div>
+
+      <div class="item-row">
+        <label>
+          <input type="checkbox" class="item" data-price="8">
+          Supreme Nachos ($8)
+        </label>
+        <input type="number" class="quantity" min="1" value="1">
+      </div>
+
+      <div class="item-row">
+        <label>
+          <input type="checkbox" class="item" data-price="5">
+          Candy Pack ($5)
+        </label>
+        <input type="number" class="quantity" min="1" value="1">
+      </div>
+    </section>
+
+    <!-- DRINKS -->
+    <section class="card">
+      <h2>Drinks</h2>
+
+      <div class="item-row">
+        <label>
+          <input type="checkbox" class="item" data-price="4">
+          Medium Soda ($4)
+        </label>
+        <input type="number" class="quantity" min="1" value="1">
+      </div>
+
+      <div class="item-row">
+        <label>
+          <input type="checkbox" class="item" data-price="6">
+          Large Slushie ($6)
+        </label>
+        <input type="number" class="quantity" min="1" value="1">
+      </div>
+
+      <div class="item-row">
+        <label>
+          <input type="checkbox" class="item" data-price="3">
+          Bottled Water ($3)
+        </label>
+        <input type="number" class="quantity" min="1" value="1">
+      </div>
+    </section>
+
+    <!-- TOTAL -->
+    <section class="card total-card">
+      <h2>Order Summary</h2>
+
+      <div class="summary-row">
+        <span>Subtotal:</span>
+        <span id="subtotal">$0.00</span>
+      </div>
+
+      <div class="summary-row">
+        <span>Tax (10%):</span>
+        <span id="tax">$0.00</span>
+      </div>
+
+      <div class="summary-row total">
+        <span>Total:</span>
+        <span id="total">$0.00</span>
+      </div>
+
+      <button id="purchaseBtn">Complete Purchase</button>
+    </section>
+
+    <!-- CONFIRMATION -->
+    <section class="card confirmation-card">
+      <h2>Confirmation</h2>
+
+      <p id="confirmationMessage">Your confirmation will appear here.</p>
+
+      <div id="qrcode"></div>
+    </section>
+
+  </div>
+
+  <script src="{{ url_for('static', filename='purchase.js') }}"></script>
+{% endblock %}
