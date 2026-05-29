@@ -21,10 +21,9 @@ st.set_page_config(
 st.markdown("""
 <style>
     /* Primary brand colors and font sizes */
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
     
-    html, body, [class*="css"], .stApp {
-        font-family: 'Poppins', sans-serif;
+    html, body, .stApp {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         background-color: #0c0f17 !important;
         color: #e2e8f0 !important;
     }
@@ -36,7 +35,7 @@ st.markdown("""
     }
     
     /* Metrics panel cards */
-    div.css-1r6g72h, div.stMetric {
+    div.stMetric {
         background: rgba(30, 41, 59, 0.45);
         border: 1px solid rgba(255, 60, 60, 0.15);
         border-radius: 12px;
@@ -92,7 +91,7 @@ st.markdown("""
         font-weight: 600 !important;
     }
 
-    /* Embedded iframe overrides (hide sidebar collapse button/padding if embedded) */
+    /* Embedded iframe overrides */
     iframe {
         border-radius: 12px;
     }
@@ -299,7 +298,7 @@ def classify_intent(message):
 # ==========================================
 # SIDEBAR CONTROLS (OUTSIDE FRAGMENT)
 # ==========================================
-st.sidebar.image("https://image.tmdb.org/t/p/w500/o01v6t3N1w1Q9ofIY8zR7i4izwh.jpg", width=100)
+st.sidebar.image("static/image/cinema_luxury.png", width=100)
 st.sidebar.markdown("<h2 style='color:#ff3c3c; margin-top:0;'>Stoplight Admin Panel</h2>", unsafe_allow_html=True)
 st.sidebar.markdown("Use these filters to inspect custom date ranges and movie titles.")
 
@@ -399,7 +398,7 @@ def render_realtime_dashboard(selected_date_range, selected_movie):
         st.metric("😊 Customer Satisfaction", f"{satisfaction_score:.1f}%", delta="+2.1% positive feedback")
 
     # Tabs for structured viewing
-    tab1, tab2, tab3 = st.tabs(["📈 Quantitative Performance", "🎭 Customer Engagement", "💬 AI Sentiment & Insights"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📈 Quantitative Performance", "🎭 Customer Engagement", "💬 AI Sentiment & Insights", "🎬 Movie Catalog Insights"])
 
     # ------------------------------------------
     # TAB 1: QUANTITATIVE PERFORMANCE
@@ -636,6 +635,180 @@ def render_realtime_dashboard(selected_date_range, selected_movie):
             )
         else:
             st.info("No recent chat memory is logged in the database yet.")
+
+    # ------------------------------------------
+    # TAB 4: MOVIE CATALOG INSIGHTS
+    # ------------------------------------------
+    with tab4:
+        st.subheader("🎬 Movie Catalog Profile & Statistical Insights")
+        st.markdown("This tab displays statistical distributions, trends, and origin shares of all movies loaded in your collection.")
+        
+        # Query movies data fresh
+        catalog_profile_df = fetch_table_data("SELECT title, year, rating, country FROM movies")
+        
+        if not catalog_profile_df.empty:
+            # Clean columns safely
+            catalog_profile_df = catalog_profile_df.dropna(subset=['rating', 'year'])
+            catalog_profile_df['rating'] = pd.to_numeric(catalog_profile_df['rating'], errors='coerce')
+            catalog_profile_df['year'] = pd.to_numeric(catalog_profile_df['year'], errors='coerce')
+            catalog_profile_df = catalog_profile_df.dropna(subset=['rating', 'year'])
+            
+            col_t4_1, col_t4_2 = st.columns(2)
+            
+            with col_t4_1:
+                # 1. Ratings Histogram
+                fig_hist = px.histogram(
+                    catalog_profile_df,
+                    x="rating",
+                    nbins=10,
+                    title="Distribution of Movie Ratings (Histogram)",
+                    color_discrete_sequence=["#ff3c3c"],
+                    labels={"rating": "Movie Rating", "count": "Movie Count"}
+                )
+                fig_hist.update_layout(
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    font_color='#cbd5e1',
+                    xaxis=dict(showgrid=True, gridcolor='#1e293b'),
+                    yaxis=dict(showgrid=True, gridcolor='#1e293b')
+                )
+                st.plotly_chart(fig_hist, use_container_width=True)
+                
+            with col_t4_2:
+                # 2. Release Year Timeline Histogram
+                fig_year = px.histogram(
+                    catalog_profile_df,
+                    x="year",
+                    nbins=12,
+                    title="Movie Release Year Timeline (Histogram)",
+                    color_discrete_sequence=["#06b6d4"],
+                    labels={"year": "Release Year", "count": "Movie Count"}
+                )
+                fig_year.update_layout(
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    font_color='#cbd5e1',
+                    xaxis=dict(showgrid=True, gridcolor='#1e293b'),
+                    yaxis=dict(showgrid=True, gridcolor='#1e293b')
+                )
+                st.plotly_chart(fig_year, use_container_width=True)
+                
+            st.markdown("---")
+            
+            col_t4_3, col_t4_4 = st.columns(2)
+            
+            with col_t4_3:
+                # 3. Rating vs Release Year Scatter Plot
+                fig_scatter = px.scatter(
+                    catalog_profile_df,
+                    x="year",
+                    y="rating",
+                    hover_name="title",
+                    title="Rating vs. Release Year Correlation",
+                    color="rating",
+                    color_continuous_scale=["#1e293b", "#ff3c3c"],
+                    labels={"year": "Release Year", "rating": "Rating"}
+                )
+                fig_scatter.update_layout(
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    font_color='#cbd5e1',
+                    coloraxis_showscale=False,
+                    xaxis=dict(showgrid=True, gridcolor='#1e293b'),
+                    yaxis=dict(showgrid=True, gridcolor='#1e293b')
+                )
+                st.plotly_chart(fig_scatter, use_container_width=True)
+                
+            with col_t4_4:
+                # 4. Country of Origin Pie Chart
+                country_counts = catalog_profile_df['country'].value_counts().reset_index()
+                country_counts.columns = ['Country', 'Count']
+                country_counts = country_counts[country_counts['Country'] != '']
+                
+                if not country_counts.empty:
+                    fig_country = px.pie(
+                        country_counts.head(6),
+                        values='Count',
+                        names='Country',
+                        title="Saved Movie Origin Geographical Breakdown",
+                        hole=0.4,
+                        color_discrete_sequence=['#ff3c3c', '#06b6d4', '#cbd5e1', '#1e293b', '#64748b']
+                    )
+                    fig_country.update_layout(
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        font_color='#cbd5e1',
+                        legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5)
+                    )
+                    st.plotly_chart(fig_country, use_container_width=True)
+                else:
+                    st.info("No geographical origin data is stored in the database yet.")
+                    
+            st.markdown("---")
+            
+            col_t4_5, col_t4_6 = st.columns(2)
+            
+            with col_t4_5:
+                # 5. Neon Gradient Genre Popularity Bar Chart
+                catalog_genres_df = fetch_table_data("""
+                    SELECT genre, COUNT(*) as count 
+                    FROM movie_catalog 
+                    GROUP BY genre 
+                    ORDER BY count DESC
+                """)
+                
+                if not catalog_genres_df.empty:
+                    fig_genre_bar = px.bar(
+                        catalog_genres_df,
+                        x="count",
+                        y="genre",
+                        orientation="h",
+                        title="Vibrant Cinema Genre Distribution",
+                        color="count",
+                        color_continuous_scale=px.colors.sequential.Sunsetdark, # Neon gradient scale
+                        labels={"count": "Number of Films", "genre": "Film Genre"}
+                    )
+                    fig_genre_bar.update_layout(
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        font_color='#cbd5e1',
+                        coloraxis_showscale=False,
+                        yaxis={'categoryorder':'total ascending'}
+                    )
+                    st.plotly_chart(fig_genre_bar, use_container_width=True)
+                else:
+                    st.info("No genre catalog details in database yet.")
+                    
+            with col_t4_6:
+                # 6. Decadal Movie Release Stacked Bar Chart
+                decade_df = catalog_profile_df.copy()
+                decade_df['decade'] = (decade_df['year'] // 10) * 10
+                decade_df['decade_str'] = decade_df['decade'].astype(int).astype(str) + "s"
+                
+                decade_country = decade_df.groupby(['decade_str', 'country']).size().reset_index(name='count')
+                
+                if not decade_country.empty:
+                    fig_decade = px.bar(
+                        decade_country,
+                        x="decade_str",
+                        y="count",
+                        color="country",
+                        title="Movie Release Timeline by Decades & Countries",
+                        color_discrete_sequence=px.colors.qualitative.Vivid, # Multi-color qualitative spectrum
+                        labels={"decade_str": "Decade", "count": "Movie Count", "country": "Country of Origin"}
+                    )
+                    fig_decade.update_layout(
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        font_color='#cbd5e1',
+                        barmode='stack',
+                        legend=dict(orientation="h", yanchor="bottom", y=-0.25, xanchor="center", x=0.5)
+                    )
+                    st.plotly_chart(fig_decade, use_container_width=True)
+                else:
+                    st.info("No decade history available.")
+        else:
+            st.info("Your movie collection is currently empty. Seed or save some movies to render catalog distributions!")
 
 # Trigger the auto-refresh fragment rendering loop
 render_realtime_dashboard(selected_date_range, selected_movie)

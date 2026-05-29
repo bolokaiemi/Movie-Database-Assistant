@@ -101,7 +101,7 @@ def initialize_and_seed_db():
             )
         ]
         cur.executemany("""
-            INSERT INTO movie_catalog (title, genre, description, poster, preview_link)
+            INSERT INTO movie_catalog (title, genre, description, poster_url, trailer_url)
             VALUES (?, ?, ?, ?, ?)
         """, catalog_movies)
         conn.commit()
@@ -154,6 +154,14 @@ initialize_and_seed_db()
 
 history = []
 
+@app.context_processor
+def inject_banners():
+    try:
+        banners = get_banner_movies()
+    except Exception:
+        banners = []
+    return dict(banners=banners)
+
 # =========================================
 # COUNTRY FLAGS
 # =========================================
@@ -183,6 +191,7 @@ def country_to_flag(country_name):
 # =========================================
 def download_local_poster(title, original_url):
     import string
+    import hashlib
     
     # Create safe filename from movie title
     safe_chars = "-_" + string.ascii_letters + string.digits
@@ -212,7 +221,16 @@ def download_local_poster(title, original_url):
         except Exception as e:
             print(f"Error downloading poster for {title}:", e)
             
-    return original_url # fallback if download fails
+    # If download fails or is blocked by school firewall, use a beautiful local placeholder consistently!
+    placeholders = [
+        "/static/image/cinema_luxury.png",
+        "/static/image/cinema_cozy.png",
+        "/static/image/cinema_retro.png",
+        "/static/image/cinema_audience.png"
+    ]
+    h = int(hashlib.md5(title.encode('utf-8')).hexdigest(), 16)
+    placeholder = placeholders[h % len(placeholders)]
+    return placeholder
 
 
 # =========================================
@@ -309,7 +327,7 @@ def home():
     db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "movies.db")
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
-    cur.execute("SELECT DISTINCT title, year, rating, poster, trailer, note, country FROM movies")
+    cur.execute("SELECT DISTINCT title, year, rating, poster_url, trailer_url, note, country FROM movies")
     rows = cur.fetchall()
     conn.close()
 
@@ -321,17 +339,17 @@ def home():
             seen_titles.add(title)
             enriched = enrich_movie(title)
             
-            poster = enriched.get("poster")
-            if not poster and row[3] and row[3].startswith("http"):
-                poster = download_local_poster(title, row[3])
-            poster = poster or ""
+            poster_url = enriched.get("poster")
+            if not poster_url and row[3] and row[3].startswith("http"):
+                poster_url = download_local_poster(title, row[3])
+            poster_url = poster_url or ""
             
             movies.append({
                 "title": title,
                 "year": enriched.get("year") or row[1] or "",
                 "rating": enriched.get("rating") or row[2] or "N/A",
-                "poster": poster,
-                "trailer": enriched.get("trailer") or row[4] or "",
+                "poster_url": poster_url,
+                "trailer_url": enriched.get("trailer") or row[4] or "",
                 "note": enriched.get("note") or row[5] or "",
                 "country": enriched.get("country") or row[6] or ""
             })
@@ -362,7 +380,7 @@ def catalog_route():
             "title": title,
             "genre": row[2],
             "description": row[3],
-            "poster": local_poster,
+            "poster_url": local_poster,
             "trailer_url": row[5],
             "year": "2023",
             "rating": "8.4"
@@ -385,7 +403,7 @@ def user_movies_route(user_id):
     db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "movies.db")
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
-    cur.execute("SELECT DISTINCT title, year, rating, poster, trailer, note, country FROM movies")
+    cur.execute("SELECT DISTINCT title, year, rating, poster_url, trailer_url, note, country FROM movies")
     rows = cur.fetchall()
     conn.close()
 
@@ -397,17 +415,17 @@ def user_movies_route(user_id):
             seen_titles.add(title)
             enriched = enrich_movie(title)
             
-            poster = enriched.get("poster")
-            if not poster and row[3] and row[3].startswith("http"):
-                poster = download_local_poster(title, row[3])
-            poster = poster or ""
+            poster_url = enriched.get("poster")
+            if not poster_url and row[3] and row[3].startswith("http"):
+                poster_url = download_local_poster(title, row[3])
+            poster_url = poster_url or ""
             
             movies.append({
                 "title": title,
                 "year": enriched.get("year") or row[1] or "N/A",
                 "rating": enriched.get("rating") or row[2] or "N/A",
-                "poster": poster,
-                "trailer": enriched.get("trailer") or row[4] or "",
+                "poster_url": poster_url,
+                "trailer_url": enriched.get("trailer") or row[4] or "",
                 "description": enriched.get("note") or row[5] or "No description available.",
                 "director": enriched.get("director") or "Unknown"
             })
@@ -437,26 +455,52 @@ def purchase(movie_id):
         return redirect("/catalog")
         
     movie_catalog_data = dict(row)
-    showtimes = get_showtimes(movie_id)
     
+    # 1. Download and resolve high-fidelity poster locally
+    local_poster = download_local_poster(movie_catalog_data["title"], movie_catalog_data["poster_url"])
+    
+    # 2. Get list of all available catalog movies for the dynamic dropdown selection
+    stored_catalog = storage.list_catalog_movies()
+    catalog_list = []
+    for item in stored_catalog:
+        catalog_list.append({
+            "id": item[0],
+            "title": item[1]
+        })
+        
+    # 3. Retrieve showtimes from database
+    showtimes = get_showtimes(movie_id)
+    showtimes_list = []
+    for s in showtimes:
+        showtimes_list.append({
+            "date": s[0],
+            "time": s[1],
+            "screen": s[2]
+        })
+        
+    # 4. Fallback defensive showtimes if catalog database showtimes are unseeded
+    if not showtimes_list:
+        showtimes_list = [
+            {"date": "Today", "time": "2:30 PM", "screen": "Screen 1 Standard"},
+            {"date": "Today", "time": "6:00 PM", "screen": "Screen 2 IMAX"},
+            {"date": "Tomorrow", "time": "9:15 PM", "screen": "Screen 3 VIP"}
+        ]
+        
     movie_data = {
         "id": movie_catalog_data["id"],
         "name": movie_catalog_data["title"],
-        "poster": movie_catalog_data["poster"],
-        "date": "Today",
-        "time": "8:00 PM",
-        "screen": "Screen 1"
+        "poster_url": local_poster,
+        "date": showtimes_list[0]["date"],
+        "time": showtimes_list[0]["time"],
+        "screen": showtimes_list[0]["screen"]
     }
-    
-    if showtimes:
-        movie_data["date"] = showtimes[0][0]
-        movie_data["time"] = showtimes[0][1]
-        movie_data["screen"] = showtimes[0][2]
         
     banners = get_banner_movies()
     return render_template(
         "purchase.html",
         movie=movie_data,
+        showtimes=showtimes_list,
+        catalog_movies=catalog_list,
         banners=banners,
         country_to_flag=country_to_flag
     )
@@ -494,6 +538,150 @@ def api_purchase():
 
 
 # =========================================
+# API SEND DIGITAL TICKET EMAIL RECEIPT
+# =========================================
+@app.route("/api/send_ticket_email", methods=["POST"])
+def send_ticket_email():
+    try:
+        data = request.get_json() or {}
+        target_email = data.get("email")
+        ticket_code = data.get("ticket_code")
+        movie_title = data.get("movie_title")
+        show_date = data.get("date")
+        show_time = data.get("time")
+        screen = data.get("screen")
+        items = data.get("items", [])
+        total = data.get("total")
+
+        if not target_email:
+            return jsonify({"success": False, "message": "Destination email is missing."})
+
+        # Load SMTP settings from .env file
+        smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+        smtp_port_raw = os.getenv("SMTP_PORT", "587")
+        try:
+            smtp_port = int(smtp_port_raw)
+        except ValueError:
+            smtp_port = 587
+            
+        smtp_email = os.getenv("SMTP_EMAIL")
+        smtp_password = os.getenv("SMTP_PASSWORD")
+
+        # Verify SMTP configurations are set
+        if not smtp_email or not smtp_password:
+            return jsonify({
+                "success": False,
+                "message": "SMTP credentials are not configured in your .env file."
+            })
+
+        # Build items table rows
+        receipt_rows = ""
+        for item in items:
+            name = item.get("name", "Cinema Item")
+            quantity = item.get("quantity", 1)
+            price = item.get("price", 0.0)
+            receipt_rows += f"""
+            <tr style="font-size: 13px; color: #d1d5db; border-bottom: 1px solid #1f1f2e;">
+              <td style="padding: 8px 0; text-align: left;">{name} x{quantity}</td>
+              <td style="padding: 8px 0; text-align: right; font-weight: bold;">${(price * quantity):.2f}</td>
+            </tr>
+            """
+
+        # Construct beautiful cinematic HTML email layout
+        html_content = f"""
+        <html>
+          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #09090e; color: #f3f4f6; padding: 40px 20px; margin: 0;">
+            <div style="max-width: 480px; margin: 0 auto; background: #14141d; border: 1px solid #232332; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);">
+              
+              <!-- Brand Header -->
+              <div style="background: #1f1f2e; padding: 24px; text-align: center; border-bottom: 2px dashed #232332;">
+                <span style="font-size: 12px; font-weight: 800; color: #9ca3af; letter-spacing: 2px; text-transform: uppercase;">🍿 MENTAL MOVIE CINEMAS</span>
+              </div>
+              
+              <!-- Movie Details Card -->
+              <div style="padding: 30px 24px 20px 24px;">
+                <h2 style="font-size: 24px; font-weight: 900; color: #ffffff; margin: 0 0 24px 0; text-transform: uppercase; letter-spacing: -0.5px; line-height: 1.2;">{movie_title}</h2>
+                
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 4px 0; font-size: 9px; color: #71717a; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">DATE</td>
+                    <td style="padding: 4px 0; font-size: 9px; color: #71717a; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">SHOWTIME</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size: 14px; font-weight: 800; color: #ffffff; padding-bottom: 16px;">{show_date}</td>
+                    <td style="font-size: 14px; font-weight: 800; color: #ffffff; padding-bottom: 16px;">{show_time}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 4px 0; font-size: 9px; color: #71717a; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">SCREEN</td>
+                    <td style="padding: 4px 0; font-size: 9px; color: #71717a; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">SEATS</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size: 14px; font-weight: 800; color: #ffffff;">{screen}</td>
+                    <td style="font-size: 14px; font-weight: 800; color: #ffffff;">General Adm</td>
+                  </tr>
+                </table>
+              </div>
+              
+              <!-- Dashed Dividing Line -->
+              <div style="height: 1px; border-top: 2px dashed #232332; margin: 0 24px;"></div>
+              
+              <!-- Concessions Receipt & QR Code -->
+              <div style="padding: 24px; background: #1a1a26;">
+                <h3 style="font-size: 11px; color: #71717a; margin: 0 0 16px 0; letter-spacing: 1px; font-weight: 700; text-transform: uppercase;">ORDER RECEIPT</h3>
+                
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
+                  {receipt_rows}
+                </table>
+                
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 28px;">
+                  <tr>
+                    <td style="font-size: 14px; font-weight: 800; color: #ffffff; border-top: 1px solid #232332; padding-top: 14px;">TOTAL PAID</td>
+                    <td style="font-size: 18px; font-weight: 900; color: #06b6d4; text-align: right; border-top: 1px solid #232332; padding-top: 14px;">{total}</td>
+                  </tr>
+                </table>
+                
+                <!-- Dynamic QR Code Center -->
+                <div style="text-align: center; margin-top: 10px;">
+                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={ticket_code}" alt="Scan QR Code" style="background: #ffffff; padding: 12px; border-radius: 16px; border: 1px solid #232332; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);" />
+                  <p style="margin: 18px 0 2px 0; font-size: 9px; color: #71717a; font-weight: 700; letter-spacing: 1px;">TICKET CODE</p>
+                  <p style="margin: 0; font-size: 18px; font-weight: 900; color: #ffffff; letter-spacing: 0.5px;">{ticket_code}</p>
+                </div>
+              </div>
+              
+            </div>
+          </body>
+        </html>
+        """
+
+        import smtplib
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+
+        # Formulate Email Envelope
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = f"🎟️ Your Digital Ticket Receipt: {movie_title} ({ticket_code})"
+        msg["From"] = smtp_email
+        msg["To"] = target_email
+
+        # Attach text backup and beautiful HTML receipt
+        text_backup = f"Cinema Ticket Receipt\nMovie: {movie_title}\nCode: {ticket_code}\nDate: {show_date}\nTime: {show_time}\nScreen: {screen}\nTotal: {total}"
+        msg.attach(MIMEText(text_backup, "plain"))
+        msg.attach(MIMEText(html_content, "html"))
+
+        # Setup Secure TLS SMTP connection
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(smtp_email, smtp_password)
+        server.sendmail(smtp_email, target_email, msg.as_string())
+        server.quit()
+
+        return jsonify({"success": True, "message": "Email sent successfully!"})
+    except Exception as e:
+        print("API EMAIL DISPATCH ERROR:", e)
+        return jsonify({"success": False, "message": f"SMTP Dispatch Error: {str(e)}"})
+
+
+# =========================================
 # REFRESH BANNERS ROUTE
 # =========================================
 @app.route("/refresh_banners")
@@ -503,6 +691,174 @@ def refresh_banners_route():
     except Exception as e:
         print("Refresh banners error:", e)
     return redirect("/")
+
+
+# Helper function to gather database context for the chatbot
+def get_chatbot_movie_context():
+    import sqlite3
+    try:
+        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "movies.db")
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        
+        # 1. Fetch catalog movies
+        cur.execute("SELECT id, title, genre, description, poster_url, trailer_url FROM movie_catalog")
+        catalog_rows = cur.fetchall()
+        
+        # 2. Fetch user saved movies
+        cur.execute("SELECT DISTINCT title, year, rating, poster_url, trailer_url, note FROM movies")
+        user_rows = cur.fetchall()
+        conn.close()
+        
+        context = "Available movies in the Cinema Catalog (purchase tickets and watch trailers inline):\n"
+        for row in catalog_rows:
+            p_url = row['poster_url'] or "/static/image/cinema_luxury.png"
+            if p_url.startswith("http"):
+                p_url = download_local_poster(row['title'], p_url)
+            t_url = row['trailer_url'] or ""
+            # Ensure YouTube link is an embed link so it plays inline
+            if "watch?v=" in t_url:
+                t_url = t_url.replace("watch?v=", "embed/")
+            elif "youtu.be/" in t_url:
+                t_url = t_url.replace("youtu.be/", "youtube.com/embed/")
+            context += f"- Title: {row['title']} | ID: {row['id']} | Genre: {row['genre']} | Purchase Link: /purchase/{row['id']} | Poster URL: {p_url} | Trailer Embed URL: {t_url}\n"
+            
+        context += "\nUser's Personal Saved Movies Collection:\n"
+        for row in user_rows:
+            p_url = row['poster_url'] or "/static/image/cinema_luxury.png"
+            if p_url.startswith("http"):
+                p_url = download_local_poster(row['title'], p_url)
+            t_url = row['trailer_url'] or ""
+            if "watch?v=" in t_url:
+                t_url = t_url.replace("watch?v=", "embed/")
+            elif "youtu.be/" in t_url:
+                t_url = t_url.replace("youtu.be/", "youtube.com/embed/")
+            context += f"- Title: {row['title']} | Year: {row['year']} | Rating: {row['rating']} | User Note: {row['note']} | Poster URL: {p_url} | Trailer Embed URL: {t_url}\n"
+            
+        return context
+    except Exception as e:
+        print("Error building chat context:", e)
+        return "Movie database is currently empty."
+
+
+def post_process_chat_reply(reply, user_message):
+    import sqlite3
+    import re
+    
+    db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "movies.db")
+    conn = sqlite3.connect(db_path)
+    cur = conn.cursor()
+    
+    # Fetch all movies from catalog
+    cur.execute("SELECT id, title, poster_url, trailer_url FROM movie_catalog")
+    catalog_movies = cur.fetchall()
+    
+    # Fetch all movies from personal
+    cur.execute("SELECT DISTINCT title, poster_url, trailer_url FROM movies")
+    personal_movies = cur.fetchall()
+    
+    conn.close()
+    
+    # Build dictionaries
+    movie_data = {}
+    for row in catalog_movies:
+        title = row[1]
+        p_url = row[2] or "/static/image/cinema_luxury.png"
+        if p_url.startswith("http"):
+            p_url = download_local_poster(title, p_url)
+        t_url = row[3] or ""
+        movie_data[title.lower()] = {
+            "title": title,
+            "id": row[0],
+            "poster_url": p_url,
+            "trailer_url": t_url
+        }
+        
+    for row in personal_movies:
+        title = row[0]
+        p_url = row[1] or "/static/image/cinema_luxury.png"
+        if p_url.startswith("http"):
+            p_url = download_local_poster(title, p_url)
+        t_url = row[2] or ""
+        # If not in catalog, add to dict
+        if title.lower() not in movie_data:
+            movie_data[title.lower()] = {
+                "title": title,
+                "id": None,
+                "poster_url": p_url,
+                "trailer_url": t_url
+            }
+            
+    # Clean up urls
+    for title_lower, info in movie_data.items():
+        t_url = info["trailer_url"]
+        if t_url:
+            if "watch?v=" in t_url:
+                info["trailer_url"] = t_url.replace("watch?v=", "embed/")
+            elif "youtu.be/" in t_url:
+                info["trailer_url"] = t_url.replace("youtu.be/", "youtube.com/embed/")
+
+    # 1. Post-process placeholders
+    matched_movie = None
+    user_msg_lower = user_message.lower()
+    reply_lower = reply.lower()
+    
+    # Find matching title
+    # Sort keys by length descending to match longer titles first
+    sorted_titles = sorted(movie_data.keys(), key=len, reverse=True)
+    for title_key in sorted_titles:
+        if title_key in user_msg_lower or title_key in reply_lower:
+            matched_movie = movie_data[title_key]
+            break
+            
+    if matched_movie:
+        p_url = matched_movie["poster_url"]
+        t_url = matched_movie["trailer_url"]
+        
+        # Replace literal placeholders
+        placeholders = [
+            "[Poster URL from the context]",
+            "<poster_url>",
+            "poster_url",
+            "[poster_url]",
+            "<poster_path>",
+            "[poster_path]",
+            "poster_path"
+        ]
+        for ph in placeholders:
+            reply = reply.replace(ph, p_url)
+            
+        trailer_placeholders = [
+            "<trailer_embed_url>",
+            "[Trailer Embed URL]",
+            "trailer_embed_url",
+            "<trailer_url>",
+            "[trailer_url]",
+            "trailer_url"
+        ]
+        for ph in trailer_placeholders:
+            reply = reply.replace(ph, t_url)
+            
+    # 2. Programmatic injection if user asked for a poster and it's missing in reply
+    asked_for_poster = any(k in user_msg_lower for k in ["poster", "cover", "image", "picture", "photo", "cover art"])
+    has_img_tag = "<img" in reply
+    
+    if asked_for_poster and not has_img_tag and matched_movie:
+        p_url = matched_movie["poster_url"]
+        img_html = f'<br><img src="{p_url}" alt="{matched_movie["title"]}" class="chat-movie-poster" style="width:120px; border-radius:10px; margin-top:8px; display:block; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.2s;">'
+        reply += img_html
+        
+    # 3. Programmatic injection if user asked for a trailer/video and it's missing in reply
+    asked_for_trailer = any(k in user_msg_lower for k in ["trailer", "video", "play", "watch", "stream"])
+    has_iframe_tag = "<iframe" in reply
+    
+    if asked_for_trailer and not has_iframe_tag and matched_movie and matched_movie["trailer_url"]:
+        t_url = matched_movie["trailer_url"]
+        iframe_html = f'<br><div style="margin-top:8px; border-radius:10px; overflow:hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.4);"><iframe width="100%" height="200" src="{t_url}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>'
+        reply += iframe_html
+        
+    return reply
 
 
 # =========================================
@@ -515,8 +871,31 @@ def chat():
     user_message = data.get("message", "")
     client_history = data.get("history", [])
 
+    # Get rich movie metadata from database
+    movie_context = get_chatbot_movie_context()
+
+    system_prompt = f"""You are CinemaBot 🎬. Always respond in the same language as the user's message (e.g., respond in German if they ask in German, French if they ask in French, Spanish if they ask in Spanish, and English if in English). Default to English.
+
+You have access to the movie catalog and the user's personal collection. Use this context to answer questions accurately!
+{movie_context}
+
+CRITICAL FORMATTING INSTRUCTIONS FOR POSTERS & TRAILERS:
+1. Always display the movie poster image directly inside the chatbot window using a raw HTML <img> tag when discussing a movie. Format it exactly like this, substituting the actual values from the movie context:
+   <img src="[Poster URL from the context]" alt="[Movie Title]" class="chat-movie-poster" style="width:120px; border-radius:10px; margin-top:8px; display:block; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.2s;">
+   
+   CRITICAL VALUE REPLACEMENT RULES:
+   - Replace "[Poster URL from the context]" with the actual HTTP URL listed after "Poster URL:" in the movie context (for example: "https://image.tmdb.org/t/p/w500/9g5tBjU1n4C9FY56V48gH7u7MOd.jpg").
+   - NEVER output the literal text "[Poster URL from the context]" or the string "<poster_url>" or the word "poster_url" inside the src attribute. Doing so is a fatal bug that displays a broken image.
+   - Do NOT wrap this <img> tag in any <a> (anchor) tag that redirects to the purchase page or the image file. This prevents the user from being redirected away from their active chatbot conversation.
+2. If the user asks to see a trailer, watch a video, or play a trailer, EMBED the YouTube video directly inside the chat so they can watch it inline! Use raw HTML iframe tags:
+   <div style='margin-top:8px; border-radius:10px; overflow:hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.4);'><iframe width='100%' height='200' src='<trailer_embed_url>' frameborder='0' allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture' allowfullscreen></iframe></div>
+3. Always make action links and buttons beautifully styled HTML tags rather than plain text or markdown links. For example, to buy tickets or view details:
+   <a href='/purchase/<movie_id>' class='chat-action-btn' style='display:inline-block; background:#06b6d4; color:#000; padding:8px 16px; border-radius:8px; font-weight:bold; text-decoration:none; margin-top:8px; font-size:12px; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);'>🍿 Purchase Tickets</a>
+4. If a movie doesn't have a poster in the database, use '/static/image/cinema_luxury.png' as a high-fidelity fallback.
+"""
+
     messages = [
-        {"role": "system", "content": "You are CinemaBot 🎬. Always respond in the same language as the user's message (e.g., respond in German if they ask in German, French if they ask in French, Spanish if they ask in Spanish, and English if they ask in English)."}
+        {"role": "system", "content": system_prompt}
     ] + client_history + [
         {"role": "user", "content": user_message}
     ]
@@ -529,6 +908,9 @@ def chat():
         )
 
         reply = response.choices[0].message.content
+
+        # Apply programmatic fail-safe post-processing filter
+        reply = post_process_chat_reply(reply, user_message)
 
         return jsonify({
             "reply": reply.replace("\n", "<br>")
@@ -551,8 +933,8 @@ def add_movie_route():
             request.form.get("title"),
             request.form.get("year"),
             request.form.get("rating"),
-            request.form.get("poster"),
-            request.form.get("trailer"),
+            request.form.get("poster_url"),
+            request.form.get("trailer_url"),
             request.form.get("note"),
             request.form.get("country")
         )
@@ -716,6 +1098,97 @@ def submit_contact():
 @app.route('/school-project')
 def school_project():
     return render_template('school-project.html')
+
+
+
+
+
+
+
+# =========================
+#  List Page
+# =========================
+@app.route('/list')
+def list_route():
+    return redirect(url_for('user_movies_route', user_id=1))
+
+@app.route('/movie_list')
+def movie_list():
+    return redirect(url_for('user_movies_route', user_id=1))
+
+
+# =========================
+# Series Page
+# =========================
+@app.route('/series')
+def series():
+    return render_template('series.html')
+
+
+# =========================
+# Trending Movies Page
+# =========================
+@app.route('/trendy')
+def trendy():
+    return render_template('trendy.html')
+
+
+# =========================
+# Films Page
+# =========================
+@app.route('/film')
+def film():
+    return redirect(url_for('user_movies_route', user_id=1))
+
+# =========================
+# Recommended Movies
+# =========================
+@app.route('/recommend')
+def recommend():
+    return render_template('recommend.html')
+
+
+# =========================
+# Action Movies
+# =========================
+@app.route('/action')
+def action():
+    return render_template('action.html')
+
+
+# =========================
+# Comedy Movies
+# =========================
+@app.route('/comedy')
+def comedy():
+    return render_template('comedy.html')
+
+
+# =========================
+# Horror Movies
+# =========================
+@app.route('/horror')
+def horror():
+    return render_template('horror.html')
+
+
+# =========================
+# Sci-Fi Movies
+# =========================
+@app.route('/sci-fi')
+def sci_fi():
+    return render_template('sci-fi.html')
+
+
+
+@app.route('/add_comment', methods=['POST'])
+def add_comment():
+    username = request.form.get('username')
+    comment = request.form.get('comment')
+
+    print(username, comment)
+
+    return redirect(request.referrer)
 
 
 

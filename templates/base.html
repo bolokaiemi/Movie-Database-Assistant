@@ -33,6 +33,14 @@
       <link rel="stylesheet"
           href="{{ url_for('static', filename='side-links.css') }}?v=1.1">
 
+    <link rel="stylesheet"
+      href="{{ url_for('static', filename='home.css') }}">
+
+    <link rel="stylesheet"
+      href="{{ url_for('static', filename='genre.css') }}">
+
+
+<link rel="stylesheet" href="{{ url_for('static', filename='comment-section.css') }}">
     <style>
         a {
             text-decoration: none;
@@ -305,9 +313,11 @@
         .chat-popup {
             padding-top: 0 !important;
             top: 95px !important;
-            bottom: 20px !important;
-            height: auto !important;
-            max-height: calc(100vh - 115px) !important;
+            bottom: 25px !important;
+            height: calc(100vh - 130px) !important;
+            max-height: calc(100vh - 130px) !important;
+            width: 95% !important;
+            max-width: 850px !important;
         }
 
         .chat-popup .chatbot-header {
@@ -380,13 +390,14 @@
             ☰
         </div>
         <div id="menuDropdown" class="dropdown" style="position: absolute; top: 100%; left: 0; z-index: 1000; min-width: 150px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px;">
-            <a href="/" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;">Home</a>
-            <a href="#" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;">My List</a>
-            <a href="#" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;">Trending</a>
-            <a href="#" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;">Series</a>
-            <a href="#" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;">Film</a>
+            <a href="{{ url_for('home') }}" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;">Home</a>
+             <a href="{{ url_for('user_movies_route', user_id=1) }}" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;">Movie-List</a>
+             <a href="{{ url_for('trendy') }}" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;">Trending</a>
+            <a href="{{ url_for('series') }}" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;">Series</a>
         </div>
     </div>
+
+
 
     <div class="logo" style="display: flex; align-items: center; gap: 15px;">
         <span>🎬 MovieMania</span>
@@ -400,10 +411,11 @@
         </button>
         <div id="categoryDropdown"
              class="dropdown">
-            <a href="#">Action</a>
-            <a href="#">Comedy</a>
-            <a href="#">Horror</a>
-            <a href="#">Sci-Fi</a>
+            <a href="{{ url_for('recommend') }}">Recommend</a>
+           <a href="{{ url_for('action') }}">Action</a>
+            <a href="{{ url_for('comedy') }}">Comedy</a>
+           <a href="{{ url_for('horror') }}">Horror</a>
+           <a href="{{ url_for('sci_fi') }}">Sci-Fi</a>
         </div>
     </div>
 
@@ -449,7 +461,7 @@
         <div class="swiper-wrapper">
             {% for movie in banners %}
             <div class="swiper-slide movie-banner-slide">
-                <img src="{{ movie.banner_url }}" class="movie-banner-image" alt="{{ movie.title }}">
+                <img src="{{ movie.banner_url }}" class="movie-banner-image" alt="{{ movie.title }}" onerror="this.onerror=null; this.src='/static/image/cinema_luxury.png';">
                 <div class="movie-banner-overlay">
                     <h1>{{ movie.title }}</h1>
                     <p>{{ movie.overview }}</p>
@@ -502,6 +514,8 @@
     {% block content %}
     {% endblock %}
 </div>
+
+{% include "comment-section.html" %}
 
 <!-- =========================================
      4. PERSISTENT CHAT TRIGGER BUTTON
@@ -586,6 +600,19 @@
 
         <div id="chat" class="chat-box"></div>
     </div>
+    <!-- SHARE DROPDOWN MENU -->
+    <div id="shareMenu" class="share-dropdown-menu">
+        <h4>Share CinemaBot</h4>
+        <button class="share-item whatsapp" onclick="shareOnWhatsApp()">
+            <span>🟢</span> Share on WhatsApp
+        </button>
+        <button class="share-item email" onclick="shareViaEmail()">
+            <span>✉️</span> Share via Email
+        </button>
+        <button class="share-item copy" onclick="shareCopyLink()">
+            <span>🔗</span> Copy Chatbot Link
+        </button>
+    </div>
 
     <!-- ICON TOOLBAR (ATTACHED RIGHT BEFORE INPUT FIELD) -->
     <div class="icon-toolbar">
@@ -598,9 +625,9 @@
     </div>
 
     <!-- INPUT AREA -->
-    <div class="input-area">
+    <div class="input-area" style="display: flex; align-items: stretch; border-top: 1px solid var(--border);">
         <button class="voice" onclick="startVoice()">🎤</button>
-        <input id="input" placeholder="Ask something...">
+        <textarea id="input" placeholder="Ask something..." rows="2" style="flex: 1; padding: 16px 20px; border: none; background: var(--surface); color: white; font-size: 16px; font-family: inherit; resize: none; outline: none; box-sizing: border-box; height: 60px;"></textarea>
         <button class="send" onclick="sendMessage()">➤</button>
     </div>
 </div>
@@ -613,6 +640,16 @@
 {% block about_content %}{% endblock %}
 {% block contact_content %}{% endblock %}
 {% block school_project_content %}{% endblock %}
+{% block home_content %}{% endblock %}
+{% block movie_list_content %}{% endblock %}
+{% block trendy_content %}{% endblock %}
+{% block series_content %}{% endblock %}
+{% block film_content %}{% endblock %}
+{% block recommend_content %}{% endblock %}
+{% block action_content %}{% endblock %}
+{% block comedy_content %}{% endblock %}
+{% block horror_content %}{% endblock %}
+{% block sci_fi_content %}{% endblock %}
 
 
 <!-- =========================
@@ -693,29 +730,40 @@
 
 <script>
     document.querySelectorAll(".movie-banner-swiper").forEach((el) => {
-        new Swiper(el, {
-            loop: true,
-            autoplay: {
-                delay: 5000,
-                disableOnInteraction: false
-            },
-            pagination: {
-                el: el.querySelector(".movie-banner-pagination"),
-                clickable: true
-            },
-            navigation: {
-                nextEl: el.querySelector(".movie-banner-next"),
-                prevEl: el.querySelector(".movie-banner-prev")
-            },
-            effect: "fade",
-            speed: 1200
-        });
+        const slides = el.querySelectorAll(".swiper-slide");
+        if (slides.length > 0) {
+            new Swiper(el, {
+                loop: slides.length > 1, // Only loop if there are multiple slides to prevent infinite loops/freezes
+                autoplay: {
+                    delay: 5000,
+                    disableOnInteraction: false
+                },
+                pagination: {
+                    el: el.querySelector(".movie-banner-pagination"),
+                    clickable: true
+                },
+                navigation: {
+                    nextEl: el.querySelector(".movie-banner-next"),
+                    prevEl: el.querySelector(".movie-banner-prev")
+                },
+                effect: "fade",
+                speed: 1200
+            });
+        }
     });
 </script>
 
 <!-- JAVASCRIPT -->
-<script src="{{ url_for('static', filename='app.js') }}?v=2.0"></script>
-<script src="{{ url_for('static', filename='side-links.js') }}?v=2.0"></script>
+
+    <script src="{{ url_for('static', filename='app.js') }}?v=2.0"></script>
+    <script src="{{ url_for('static', filename='side-links.js') }}?v=2.0"></script>
+    <script src="{{ url_for('static', filename='home.js') }}?v=2.0"></script>
+    <script src="{{ url_for('static', filename='genre.js') }}?v=2.0"></script>
+    <script src="{{ url_for('static', filename='comment-section.js') }}?v=2.0"></script>
 
 </body>
 </html>
+
+
+
+

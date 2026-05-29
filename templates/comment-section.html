@@ -1,0 +1,66 @@
+
+
+<section id="comments" class="cinema-comments-section">
+
+    <div class="cinema-comments-card">
+
+        <h2 class="mb-4">
+            Comments
+        </h2>
+
+        <!-- Comment Form -->
+        <form method="POST" action="{{ url_for('add_comment') }}">
+
+            <div class="mb-3">
+                <label for="username" class="form-label">Name</label>
+
+                <input type="text"
+                       class="form-control"
+                       id="username"
+                       name="username"
+                       required>
+            </div>
+
+            <div class="mb-3">
+                <label for="comment" class="form-label">Comment</label>
+
+                <textarea class="form-control"
+                          id="comment"
+                          name="comment"
+                          rows="4"
+                          required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                Post Comment
+            </button>
+
+        </form>
+
+        <!-- Existing Comments -->
+        <div class="mt-5">
+
+            <h4 class="mb-3">
+                Recent Comments
+            </h4>
+
+            <div class="comment-box">
+                <div class="comment-user">Sarah Johnson</div>
+                <p class="comment-text">
+                    I really enjoyed the movie recommendations on this page.
+                </p>
+            </div>
+
+            <div class="comment-box">
+                <div class="comment-user">Michael Brown</div>
+                <p class="comment-text">
+                    The action movie collection is amazing.
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+

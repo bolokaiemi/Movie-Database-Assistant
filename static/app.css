@@ -125,7 +125,9 @@ body{
     filter: brightness(1.1);
 }
 
-
+.welcome-message{
+    color: #22d3ee;
+}
 
 /* =========================
    MAIN BANNER
@@ -810,7 +812,94 @@ header{
   cursor: not-allowed;
 }
 
+/* ===== SLEEK PREMIUM SHARE MENU ===== */
+.share-dropdown-menu {
+  position: absolute;
+  bottom: 80px; /* Positioned directly above the toolbar/input area */
+  right: 20px;
+  background: rgba(30, 41, 59, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 16px;
+  width: 240px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  z-index: 10005;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform: translateY(10px);
+  opacity: 0;
+  pointer-events: none;
+}
 
+.share-dropdown-menu.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.share-dropdown-menu h4 {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+
+.share-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: white;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  transition: background 0.2s, border-color 0.2s, transform 0.1s;
+  outline: none;
+}
+
+.share-item:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.share-item:active {
+  transform: translateY(0);
+}
+
+.share-item.whatsapp {
+  color: #25d366;
+  border-color: rgba(37, 211, 102, 0.3);
+}
+.share-item.whatsapp:hover {
+  background: rgba(37, 211, 102, 0.15);
+}
+
+.share-item.email {
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+.share-item.email:hover {
+  background: rgba(56, 189, 248, 0.15);
+}
+
+.share-item.copy {
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+.share-item.copy:hover {
+  background: rgba(245, 158, 11, 0.15);
+}
 
 /* ===== MOVIE CHATBOT LANGUAGE SELECTOR ===== */
 

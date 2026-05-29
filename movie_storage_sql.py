@@ -59,18 +59,19 @@ def create_table():
     # =========================
     # MOVIES TABLE
     # =========================
-
-
     cursor.execute("""
                    CREATE TABLE IF NOT EXISTS movies
                    (
                        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                       user_id     INTEGER,
                        title       TEXT NOT NULL,
-                       poster      TEXT,
+                       poster_url  TEXT,
                        year        INTEGER,
                        rating      REAL,
                        description TEXT,
                        trailer_url TEXT,
+                       note        TEXT,
+                       country     TEXT,
                        date        TEXT,
                        time        TEXT,
                        screen      TEXT,
@@ -78,37 +79,7 @@ def create_table():
                    )
                    """)
 
-
-
-    print("Database created with created_at column.")
-    # =========================
-    # SAFE COLUMN ADDITIONS
-    # =========================
-
-    try:
-        cursor.execute("ALTER TABLE movies ADD COLUMN user_id INTEGER")
-    except sqlite3.OperationalError:
-        pass
-
-    try:
-        cursor.execute("ALTER TABLE movies ADD COLUMN poster TEXT")
-    except sqlite3.OperationalError:
-        pass
-
-    try:
-        cursor.execute("ALTER TABLE movies ADD COLUMN trailer TEXT")
-    except sqlite3.OperationalError:
-        pass
-
-    try:
-        cursor.execute("ALTER TABLE movies ADD COLUMN note TEXT")
-    except sqlite3.OperationalError:
-        pass
-
-    try:
-        cursor.execute("ALTER TABLE movies ADD COLUMN country TEXT")
-    except sqlite3.OperationalError:
-        pass
+    print("Database created with clean poster_url and trailer_url columns.")
 
     # =========================
     # MOVIE CATALOG TABLE
@@ -119,8 +90,8 @@ def create_table():
             title TEXT UNIQUE,
             genre TEXT,
             description TEXT,
-            poster TEXT,
-            preview_link TEXT
+            poster_url TEXT,
+            trailer_url TEXT
         )
     """)
 
@@ -275,8 +246,8 @@ def add_movie(
     title,
     year,
     rating,
-    poster="",
-    trailer="",
+    poster_url="",
+    trailer_url="",
     note="",
     country=""
 ):
@@ -291,8 +262,8 @@ def add_movie(
             title,
             year,
             rating,
-            poster,
-            trailer,
+            poster_url,
+            trailer_url,
             note,
             country
            
@@ -305,8 +276,8 @@ def add_movie(
         title,
         year,
         rating,
-        poster,
-        trailer,
+        poster_url,
+        trailer_url,
         note,
         country
     ))
@@ -329,8 +300,8 @@ def list_movies(user_id):
             title,
             year,
             rating,
-            poster,
-            trailer,
+            poster_url,
+            trailer_url,
             note,
             country
 
@@ -350,8 +321,8 @@ def list_movies(user_id):
         movies[row[0]] = {
             "year": row[1],
             "rating": row[2],
-            "poster": row[3],
-            "trailer": row[4],
+            "poster_url": row[3],
+            "trailer_url": row[4],
             "note": row[5],
             "country": row[6]
         }
@@ -412,7 +383,7 @@ def update_movie_rating(user_id, title, rating):
     conn.close()
 
 
-def update_movie(user_id, title, rating, poster):
+def update_movie(user_id, title, rating, poster_url):
 
     conn = connect()
     cur = conn.cursor()
@@ -422,13 +393,13 @@ def update_movie(user_id, title, rating, poster):
 
         SET
             rating = ?,
-            poster = ?
+            poster_url = ?
 
         WHERE title = ?
         AND user_id = ?
     """, (
         rating,
-        poster,
+        poster_url,
         title,
         user_id
     ))
@@ -444,8 +415,8 @@ def add_catalog_movie(
     title,
     genre,
     description,
-    poster,
-    preview_link
+    poster_url,
+    trailer_url
 ):
 
     conn = connect()
@@ -457,8 +428,8 @@ def add_catalog_movie(
             title,
             genre,
             description,
-            poster,
-            preview_link
+            poster_url,
+            trailer_url
         )
 
         VALUES (?, ?, ?, ?, ?)
@@ -466,8 +437,8 @@ def add_catalog_movie(
         title,
         genre,
         description,
-        poster,
-        preview_link
+        poster_url,
+        trailer_url
     ))
 
     conn.commit()
@@ -485,8 +456,8 @@ def list_catalog_movies():
             title,
             genre,
             description,
-            poster,
-            preview_link
+            poster_url,
+            trailer_url
 
         FROM movie_catalog
     """)
@@ -962,14 +933,20 @@ def get_banner_movies(category=None):
             WHERE category = ?
             ORDER BY rating DESC
         """, (category,))
+        local_movies = [dict(row) for row in cursor.fetchall()]
     else:
-        cursor.execute("""
-            SELECT *
-            FROM banner_movies
-            ORDER BY created_at DESC
-        """)
-
-    local_movies = [dict(row) for row in cursor.fetchall()]
+        # Fetch the top 2 movies from each category to ensure a diverse showcase
+        categories = ["trending", "top_rated", "sci_fi", "classics", "new_releases", "award_winners"]
+        local_movies = []
+        for cat in categories:
+            cursor.execute("""
+                SELECT *
+                FROM banner_movies
+                WHERE category = ?
+                ORDER BY created_at DESC, rating DESC
+                LIMIT 2
+            """, (cat,))
+            local_movies.extend([dict(row) for row in cursor.fetchall()])
 
     conn.close()
 

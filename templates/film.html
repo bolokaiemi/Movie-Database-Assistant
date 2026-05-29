@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Featured Films{% endblock %}
+
+{% block content %}
+<section id="featured-films">
+    <div class="container mt-5">
+
+        <div class="text-center mb-5">
+            <h1>Featured Films</h1>
+            <p>Discover award-winning films, blockbuster hits, and timeless cinema classics.</p>
+        </div>
+
+        <div class="row">
+
+            <!-- Film 1 -->
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-lg">
+                    <img src="{{ url_for('static', filename='images/film1.jpg') }}"
+                         class="card-img-top"
+                         alt="Film Poster">
+
+                    <div class="card-body">
+                        <h3 class="card-title">Oppenheimer</h3>
+
+                        <p class="card-text">
+                            A gripping historical drama following the life of J. Robert
+                            Oppenheimer and the creation of the atomic bomb.
+                        </p>
+
+                        <a href="#" class="btn btn-primary">
+                            View Film
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Film 2 -->
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-lg">
+                    <img src="{{ url_for('static', filename='images/film2.jpg') }}"
+                         class="card-img-top"
+                         alt="Film Poster">
+
+                    <div class="card-body">
+                        <h3 class="card-title">The Shawshank Redemption</h3>
+
+                        <p class="card-text">
+                            A powerful story of friendship, hope, and survival inside
+                            one of America’s toughest prisons.
+                        </p>
+
+                        <a href="#" class="btn btn-primary">
+                            View Film
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Film 3 -->
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-lg">
+                    <img src="{{ url_for('static', filename='images/film3.jpg') }}"
+                         class="card-img-top"
+                         alt="Film Poster">
+
+                    <div class="card-body">
+                        <h3 class="card-title">Gladiator</h3>
+
+                        <p class="card-text">
+                            A betrayed Roman general fights for freedom and revenge
+                            inside the brutal world of gladiator combat.
+                        </p>
+
+                        <a href="#" class="btn btn-primary">
+                            View Film
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Film 4 -->
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-lg">
+                    <img src="{{ url_for('static', filename='images/film4.jpg') }}"
+                         class="card-img-top"
+                         alt="Film Poster">
+
+                    <div class="card-body">
+                        <h3 class="card-title">Titanic</h3>
+
+                        <p class="card-text">
+                            A timeless romantic drama set aboard the ill-fated RMS Titanic
+                            during its tragic maiden voyage.
+                        </p>
+
+                        <a href="#" class="btn btn-primary">
+                            View Film
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Film 5 -->
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-lg">
+                    <img src="{{ url_for('static', filename='images/film5.jpg') }}"
+                         class="card-img-top"
+                         alt="Film Poster">
+
+                    <div class="card-body">
+                        <h3 class="card-title">The Godfather</h3>
+
+                        <p class="card-text">
+                            The powerful story of the Corleone crime family and their
+                            influence within organized crime.
+                        </p>
+
+                        <a href="#" class="btn btn-primary">
+                            View Film
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Film 6 -->
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-lg">
+                    <img src="{{ url_for('static', filename='images/film6.jpg') }}"
+                         class="card-img-top"
+                         alt="Film Poster">
+
+                    <div class="card-body">
+                        <h3 class="card-title">Jurassic Park</h3>
+
+                        <p class="card-text">
+                            Scientists bring dinosaurs back to life in a thrilling
+                            adventure that quickly spirals out of control.
+                        </p>
+
+                        <a href="#" class="btn btn-primary">
+                            View Film
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+{% endblock %}

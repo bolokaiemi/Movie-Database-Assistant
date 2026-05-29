@@ -20,7 +20,7 @@ def generate(movies, username):
             <h3>{title}</h3>
             <p>{movie.get('year','')}</p>
             <p>{movie.get('rating','')}</p>
-            <img src="{movie.get('poster','')}" width="150">
+            <img src="{movie.get('poster_url','')}" width="150">
         </div>
         """
 

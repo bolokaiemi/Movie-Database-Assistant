@@ -1,0 +1,78 @@
+
+
+/* =====================================
+   CinemaBot Movie List (Scoped Styles)
+   No conflicts with other pages
+===================================== */
+
+.cinema-list-page {
+    padding: 40px 0;
+    background-color: #f4f7f6;
+}
+
+/* Header */
+.cinema-list-page .cinema-list-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.cinema-list-page .cinema-list-header h1 {
+    font-weight: bold;
+    color: #1d3557;
+}
+
+.cinema-list-page .cinema-list-header p {
+    color: #555;
+}
+
+/* Movie Cards */
+.cinema-list-page .cinema-movie-card {
+    border: none;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    transition: transform 0.3s ease;
+}
+
+.cinema-list-page .cinema-movie-card:hover {
+    transform: translateY(-8px);
+}
+
+/* Images */
+.cinema-list-page .cinema-movie-card img {
+    height: 350px;
+    object-fit: cover;
+}
+
+/* Titles */
+.cinema-list-page .cinema-movie-title {
+    color: #0b2545;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+/* Description */
+.cinema-list-page .cinema-movie-text {
+    font-size: 14px;
+    color: #555;
+}
+
+/* Button */
+.cinema-list-page .btn-primary {
+    background-color: #1d3557;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+}
+
+.cinema-list-page .btn-primary:hover {
+    background-color: #0b2545;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .cinema-list-page .cinema-movie-card img {
+        height: 250px;
+    }
+}

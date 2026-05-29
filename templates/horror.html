@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Horror Movies{% endblock %}
+
+{% block content %}
+<section id="horror-movies">
+    <div class="container-side-links mt-5">
+
+        <div class="text-center mb-5">
+            <h1>Horror Movies</h1>
+            <p>Explore terrifying horror films filled with suspense and mystery.</p>
+        </div>
+
+        <div class="row">
+
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-lg">
+                    <img src="/static/image/cinema_retro.png"
+                         class="card-img-top"
+                         alt="Horror Movie">
+
+                    <div class="card-body">
+                        <h3 class="card-title">The Conjuring</h3>
+
+                        <p class="card-text">
+                            Paranormal investigators confront dark supernatural forces
+                            inside a haunted family home.
+                        </p>
+
+                        <a href="/catalog" class="btn btn-primary">
+                            View Movie
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+{% endblock %}

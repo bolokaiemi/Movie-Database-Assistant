@@ -211,11 +211,11 @@ function addMessage(text, sender) {
     if (inputEl) {
 
         inputEl.addEventListener(
-            "keypress",
+            "keydown",
             function (e) {
 
-                if (e.key === "Enter") {
-
+                if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
                     sendMessage();
                 }
             }
@@ -799,14 +799,9 @@ document.querySelectorAll(".icon-btn").forEach(btn => {
         break;
 
       case "share":
-        if (navigator.share) {
-          navigator.share({
-            title: "Movie Chatbot",
-            text: "Check out this conversation!",
-            url: window.location.href
-          });
-        } else {
-          alert("Sharing not supported in this browser.");
+        const shareMenu = document.getElementById("shareMenu");
+        if (shareMenu) {
+          shareMenu.classList.toggle("show");
         }
         break;
 
@@ -974,6 +969,82 @@ document.querySelectorAll(".icon-btn").forEach(btn => {
 
 })();
 
+});
+
+// =========================================
+// PREMIUM SHARE MENU ACTIONS
+// =========================================
+window.shareOnWhatsApp = function() {
+  const shareText = encodeURIComponent("Check out this amazing CinemaBot movie assistant! 🎬🍿\n" + window.location.href);
+  window.open(`https://api.whatsapp.com/send?text=${shareText}`, '_blank');
+  const shareMenu = document.getElementById("shareMenu");
+  if (shareMenu) shareMenu.classList.remove("show");
+};
+
+window.shareViaEmail = function() {
+  const subject = encodeURIComponent("You've got to check out this CinemaBot!");
+  const body = encodeURIComponent("Hey! I was just using this awesome CinemaBot movie assistant to find the latest films and buy tickets. You should check it out here:\n\n" + window.location.href);
+  window.open(`mailto:?subject=${subject}&body=${body}`, '_self');
+  const shareMenu = document.getElementById("shareMenu");
+  if (shareMenu) shareMenu.classList.remove("show");
+};
+
+window.shareCopyLink = function() {
+  navigator.clipboard.writeText(window.location.href).then(() => {
+    window.showToast("Link copied to clipboard! 🔗");
+  }).catch(err => {
+    alert("Failed to copy link: " + err);
+  });
+  const shareMenu = document.getElementById("shareMenu");
+  if (shareMenu) shareMenu.classList.remove("show");
+};
+
+window.showToast = function(message) {
+  let toast = document.getElementById("shareToast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "shareToast";
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid var(--accent);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      z-index: 100000;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+    `;
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  setTimeout(() => {
+    toast.style.opacity = "1";
+    toast.style.transform = "translateX(-50%) translateY(0)";
+  }, 50);
+  
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateX(-50%) translateY(20px)";
+  }, 3000);
+};
+
+// Close share menu if clicked outside
+document.addEventListener("click", (event) => {
+  const shareMenu = document.getElementById("shareMenu");
+  const shareBtn = document.querySelector('[data-action="share"]');
+  if (shareMenu && shareMenu.classList.contains("show")) {
+    if (!shareMenu.contains(event.target) && event.target !== shareBtn && !shareBtn.contains(event.target)) {
+      shareMenu.classList.remove("show");
+    }
+  }
 });
 
 

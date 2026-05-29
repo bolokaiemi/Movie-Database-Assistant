@@ -14,9 +14,6 @@
 </nav>
 {% endblock %}
 
-{% block banner_content %}
-{% endblock %}
-
 {% block content %}
 
  <link rel="stylesheet"
@@ -158,7 +155,7 @@
 }
 </style>
 
-<div class="container">
+<div class="catalog-container">
 
   <h1 class="page-title" style="text-align: center; margin-top: 130px; font-size: 36px; margin-bottom: 60px;">
     🎬 Movie Catalog
@@ -184,7 +181,7 @@
 
           <!-- MOVIE POSTER CONTAINER (UNIFORM HEIGHT & HOVER SCALE) -->
           <div class="poster-container">
-              <img src="{{ bg_src }}" class="movie-poster" alt="{{ movie.title }}" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'500\' height=\'750\' viewBox=\'0 0 500 750\'><rect width=\'100%\' height=\'100%\' fill=\'%231e293b\'/><text x=\'50%\' y=\'45%\' font-family=\'Arial\' font-size=\'64\' fill=\'%2322d3ee\' text-anchor=\'middle\'>🎬</text><text x=\'50%\' y=\'58%\' font-family=\'Arial\' font-size=\'28\' font-weight=\'bold\' fill=\'%23ffffff\' text-anchor=\'middle\'>{{ movie.title }}</text></svg>';">
+              <img src="{{ movie.poster_url or bg_src }}" class="movie-poster" alt="{{ movie.title }}" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'500\' height=\'750\' viewBox=\'0 0 500 750\'><rect width=\'100%\' height=\'100%\' fill=\'%231e293b\'/><text x=\'50%\' y=\'45%\' font-family=\'Arial\' font-size=\'64\' fill=\'%2322d3ee\' text-anchor=\'middle\'>🎬</text><text x=\'50%\' y=\'58%\' font-family=\'Arial\' font-size=\'28\' font-weight=\'bold\' fill=\'%23ffffff\' text-anchor=\'middle\'>{{ movie.title }}</text></svg>';">
               
               <!-- Premium glassmorphic screen overlay representing the movie playing in the theater -->
               <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.25); display: flex; align-items: center; justify-content: center; padding: 15px; box-sizing: border-box;">

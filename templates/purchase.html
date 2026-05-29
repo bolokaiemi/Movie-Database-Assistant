@@ -9,125 +9,248 @@
 
   <div class="purchase-page-container">
 
-    <h1>Movie Ticket & Snack Purchase</h1>
+    <!-- BOOKING SELECTORS -->
+    <div class="booking-selectors" style="display: flex; gap: 20px; margin-bottom: 24px; flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 250px;">
+        <label for="movieSelect" style="display: block; font-size: 11px; color: var(--text-muted); font-weight: 700; letter-spacing: 1px; margin-bottom: 8px; text-transform: uppercase;">Select Film</label>
+        <select id="movieSelect" style="width: 100%; padding: 12px 16px; background: var(--card-bg); border: 1px solid var(--border-color); color: #fff; border-radius: 12px; outline: none; font-size: 14px; font-weight: 600; cursor: pointer; transition: border-color 0.2s;" onchange="window.location.href='/purchase/' + this.value;">
+          {% for cat_movie in catalog_movies %}
+          <option value="{{ cat_movie.id }}" {% if cat_movie.id == movie.id %}selected{% endif %}>{{ cat_movie.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div style="flex: 1; min-width: 250px;">
+        <label for="showtimeSelect" style="display: block; font-size: 11px; color: var(--text-muted); font-weight: 700; letter-spacing: 1px; margin-bottom: 8px; text-transform: uppercase;">Select Showtime & Screen</label>
+        <select id="showtimeSelect" style="width: 100%; padding: 12px 16px; background: var(--card-bg); border: 1px solid var(--border-color); color: #fff; border-radius: 12px; outline: none; font-size: 14px; font-weight: 600; cursor: pointer; transition: border-color 0.2s;">
+          {% for st in showtimes %}
+          <option value="{{ st.date }}|{{ st.time }}|{{ st.screen }}" data-date="{{ st.date }}" data-time="{{ st.time }}" data-screen="{{ st.screen }}" {% if loop.first %}selected{% endif %}>
+            📅 {{ st.date }} at 🕒 {{ st.time }} &bull; {{ st.screen }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
 
-    <!-- TICKETS -->
-    <section class="card">
-      <h2>Tickets</h2>
+    <!-- MOVIE BANNER CARD -->
+    <div class="movie-banner-card">
+      <img class="movie-banner-poster" src="{{ movie.poster_url or '/static/image/cinema_luxury.png' }}" alt="{{ movie.name }}" onerror="this.onerror=null; this.src='/static/image/cinema_luxury.png';">
+      <div class="movie-banner-details">
+        <span class="movie-banner-badge">NOW BOOKING</span>
+        <h2 class="movie-banner-title" id="selectedMovieTitle">{{ movie.name }}</h2>
+        <div class="movie-banner-meta">
+          <div class="meta-item">
+            <span class="meta-icon">📅</span>
+            <div>
+              <small>DATE</small>
+              <p id="selectedMovieDate">{{ movie.date }}</p>
+            </div>
+          </div>
+          <div class="meta-item">
+            <span class="meta-icon">🕒</span>
+            <div>
+              <small>SHOWTIME</small>
+              <p id="selectedMovieTime">{{ movie.time }}</p>
+            </div>
+          </div>
+          <div class="meta-item">
+            <span class="meta-icon">🎬</span>
+            <div>
+              <small>SCREEN</small>
+              <p id="selectedMovieScreen">{{ movie.screen }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-      <div class="item-row">
-        <label>
-          <input type="checkbox" class="item" data-price="12">
-          Adult Ticket ($12)
-        </label>
-        <input type="number" class="quantity" min="1" value="1">
+    <div class="purchase-grid">
+      <div class="purchase-left-column">
+        <!-- TICKETS -->
+        <section class="card">
+          <h2>Select Tickets</h2>
+
+          <div class="item-row">
+            <label>
+              <input type="checkbox" class="item" data-price="12" data-name="Adult Ticket">
+              Adult Ticket ($12)
+            </label>
+            <input type="number" class="quantity" min="1" value="1">
+          </div>
+
+          <div class="item-row">
+            <label>
+              <input type="checkbox" class="item" data-price="8" data-name="Child Ticket">
+              Child Ticket ($8)
+            </label>
+            <input type="number" class="quantity" min="1" value="1">
+          </div>
+
+          <div class="item-row">
+            <label>
+              <input type="checkbox" class="item" data-price="10" data-name="Senior Ticket">
+              Senior Ticket ($10)
+            </label>
+            <input type="number" class="quantity" min="1" value="1">
+          </div>
+        </section>
+
+        <!-- SNACKS -->
+        <section class="card">
+          <h2>Snacks</h2>
+
+          <div class="item-row">
+            <label>
+              <input type="checkbox" class="item" data-price="7" data-name="Large Popcorn">
+              Large Popcorn ($7)
+            </label>
+            <input type="number" class="quantity" min="1" value="1">
+          </div>
+
+          <div class="item-row">
+            <label>
+              <input type="checkbox" class="item" data-price="8" data-name="Supreme Nachos">
+              Supreme Nachos ($8)
+            </label>
+            <input type="number" class="quantity" min="1" value="1">
+          </div>
+
+          <div class="item-row">
+            <label>
+              <input type="checkbox" class="item" data-price="5" data-name="Candy Pack">
+              Candy Pack ($5)
+            </label>
+            <input type="number" class="quantity" min="1" value="1">
+          </div>
+        </section>
+
+        <!-- DRINKS -->
+        <section class="card">
+          <h2>Drinks</h2>
+
+          <div class="item-row">
+            <label>
+              <input type="checkbox" class="item" data-price="4" data-name="Medium Soda">
+              Medium Soda ($4)
+            </label>
+            <input type="number" class="quantity" min="1" value="1">
+          </div>
+
+          <div class="item-row">
+            <label>
+              <input type="checkbox" class="item" data-price="6" data-name="Large Slushie">
+              Large Slushie ($6)
+            </label>
+            <input type="number" class="quantity" min="1" value="1">
+          </div>
+
+          <div class="item-row">
+            <label>
+              <input type="checkbox" class="item" data-price="3" data-name="Bottled Water">
+              Bottled Water ($3)
+            </label>
+            <input type="number" class="quantity" min="1" value="1">
+          </div>
+        </section>
       </div>
 
-      <div class="item-row">
-        <label>
-          <input type="checkbox" class="item" data-price="8">
-          Child Ticket ($8)
-        </label>
-        <input type="number" class="quantity" min="1" value="1">
+      <div class="purchase-right-column">
+        <!-- TOTAL -->
+        <section class="card total-card" id="orderSummaryCard">
+          <h2>Order Summary</h2>
+
+          <div class="summary-movie-info">
+            <span class="summary-movie-title">{{ movie.name }}</span>
+            <span class="summary-movie-screen">{{ movie.screen }}</span>
+          </div>
+
+          <div class="summary-row">
+            <span>Subtotal:</span>
+            <span id="subtotal">$0.00</span>
+          </div>
+
+          <div class="summary-row">
+            <span>Tax (10%):</span>
+            <span id="tax">$0.00</span>
+          </div>
+
+          <div class="summary-row total">
+            <span>Total:</span>
+            <span id="total">$0.00</span>
+          </div>
+
+          <div class="email-input-wrapper" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+            <label for="userEmail" style="display: block; font-size: 11px; color: var(--text-muted); font-weight: 700; letter-spacing: 1px; margin-bottom: 8px; text-transform: uppercase;">Email Receipt & Ticket</label>
+            <input type="email" id="userEmail" placeholder="Enter your email address" style="width: 100%; padding: 12px 14px; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-color); color: #fff; border-radius: 10px; outline: none; font-size: 14px; transition: border-color 0.2s ease;">
+          </div>
+
+          <button id="purchaseBtn">Complete Purchase</button>
+        </section>
+
+        <!-- CONFIRMATION (DIGITAL TICKET) -->
+        <div class="ticket-container" id="ticketContainer" style="display: none;">
+          <div class="digital-ticket">
+            <div class="ticket-header">
+              <div>
+                <div class="ticket-brand">🍿 MENTAL MOVIE CINEMAS</div>
+                <div id="ticketEmailStatus" class="ticket-email-status" style="font-size: 10px; font-weight: 800; color: #06b6d4; margin-top: 4px; display: none; text-transform: uppercase; letter-spacing: 0.5px;">📧 Emailed successfully!</div>
+              </div>
+              <div class="ticket-badge">PAID</div>
+            </div>
+            
+            <div class="ticket-body">
+              <h2 class="ticket-movie-title" id="ticketMovieTitle">{{ movie.name }}</h2>
+              
+              <div class="ticket-info-grid">
+                <div class="info-cell">
+                  <span class="info-label">DATE</span>
+                  <span class="info-value" id="ticketDate">{{ movie.date }}</span>
+                </div>
+                <div class="info-cell">
+                  <span class="info-label">SHOWTIME</span>
+                  <span class="info-value" id="ticketTime">{{ movie.time }}</span>
+                </div>
+                <div class="info-cell">
+                  <span class="info-label">SCREEN</span>
+                  <span class="info-value" id="ticketScreen">{{ movie.screen }}</span>
+                </div>
+                <div class="info-cell">
+                  <span class="info-label">SEATS</span>
+                  <span class="info-value">General Adm</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="ticket-divider">
+              <div class="notch notch-left"></div>
+              <div class="ticket-dashed-line"></div>
+              <div class="notch notch-right"></div>
+            </div>
+            
+            <div class="ticket-footer">
+              <div class="ticket-receipt">
+                <h3>ORDER RECEIPT</h3>
+                <div id="ticketItemsList" class="ticket-items-list">
+                  <!-- Dynamically populated in JS -->
+                </div>
+                <div class="ticket-total-row">
+                  <span>TOTAL PAID</span>
+                  <span id="ticketTotalAmount" class="ticket-total-value">$0.00</span>
+                </div>
+              </div>
+              
+              <div class="ticket-qr-section">
+                <div id="qrcode" class="qr-code-img"></div>
+                <div class="ticket-code-wrapper">
+                  <span class="ticket-code-label">TICKET CODE</span>
+                  <span id="ticketCode" class="ticket-code-value"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-
-      <div class="item-row">
-        <label>
-          <input type="checkbox" class="item" data-price="10">
-          Senior Ticket ($10)
-        </label>
-        <input type="number" class="quantity" min="1" value="1">
-      </div>
-    </section>
-
-    <!-- SNACKS -->
-    <section class="card">
-      <h2>Snacks</h2>
-
-      <div class="item-row">
-        <label>
-          <input type="checkbox" class="item" data-price="7">
-          Large Popcorn ($7)
-        </label>
-        <input type="number" class="quantity" min="1" value="1">
-      </div>
-
-      <div class="item-row">
-        <label>
-          <input type="checkbox" class="item" data-price="8">
-          Supreme Nachos ($8)
-        </label>
-        <input type="number" class="quantity" min="1" value="1">
-      </div>
-
-      <div class="item-row">
-        <label>
-          <input type="checkbox" class="item" data-price="5">
-          Candy Pack ($5)
-        </label>
-        <input type="number" class="quantity" min="1" value="1">
-      </div>
-    </section>
-
-    <!-- DRINKS -->
-    <section class="card">
-      <h2>Drinks</h2>
-
-      <div class="item-row">
-        <label>
-          <input type="checkbox" class="item" data-price="4">
-          Medium Soda ($4)
-        </label>
-        <input type="number" class="quantity" min="1" value="1">
-      </div>
-
-      <div class="item-row">
-        <label>
-          <input type="checkbox" class="item" data-price="6">
-          Large Slushie ($6)
-        </label>
-        <input type="number" class="quantity" min="1" value="1">
-      </div>
-
-      <div class="item-row">
-        <label>
-          <input type="checkbox" class="item" data-price="3">
-          Bottled Water ($3)
-        </label>
-        <input type="number" class="quantity" min="1" value="1">
-      </div>
-    </section>
-
-    <!-- TOTAL -->
-    <section class="card total-card">
-      <h2>Order Summary</h2>
-
-      <div class="summary-row">
-        <span>Subtotal:</span>
-        <span id="subtotal">$0.00</span>
-      </div>
-
-      <div class="summary-row">
-        <span>Tax (10%):</span>
-        <span id="tax">$0.00</span>
-      </div>
-
-      <div class="summary-row total">
-        <span>Total:</span>
-        <span id="total">$0.00</span>
-      </div>
-
-      <button id="purchaseBtn">Complete Purchase</button>
-    </section>
-
-    <!-- CONFIRMATION -->
-    <section class="card confirmation-card">
-      <h2>Confirmation</h2>
-
-      <p id="confirmationMessage">Your confirmation will appear here.</p>
-
-      <div id="qrcode"></div>
-    </section>
+    </div>
 
   </div>
 

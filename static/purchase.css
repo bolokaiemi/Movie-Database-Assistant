@@ -1,83 +1,520 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: Arial;
-  background: #111;
-  color: white;
-  padding: 30px;
+/* Core Variables & Theme */
+:root {
+  --bg-color: #09090e;
+  --card-bg: #14141d;
+  --border-color: #232332;
+  --text-main: #f3f4f6;
+  --text-muted: #9ca3af;
+  --accent-cyan: #06b6d4;
+  --accent-blue: #3b82f6;
+  --accent-gold: #f59e0b;
+  --accent-green: #10b981;
+  --accent-glow: rgb(255, 255, 255);
+  --gradient-main: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
 }
 
 .purchase-page-container {
-  max-width: 900px;
-  margin: auto;
-}
-
-h1 {
-  text-align: center;
-  color: gold;
-  margin-bottom: 30px;
-}
-
-.card {
-  background: #1f1f1f;
+  font-family: 'Outfit', 'Inter', sans-serif;
+  color: var(--text-main);
+  line-height: 1.6;
+  max-width: 1000px;
+  margin: 40px auto;
   padding: 20px;
-  margin-bottom: 20px;
+  box-sizing: border-box;
+}
+
+/* =========================================
+   MOVIE BANNER CARD
+   ========================================= */
+.purchase-page-container .movie-banner-card {
+  display: flex;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 30px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px var(--accent-glow);
+  align-items: center;
+  gap: 24px;
+}
+
+.purchase-page-container .movie-banner-poster {
+  width: 120px;
+  height: 180px;
+  object-fit: cover;
   border-radius: 12px;
-  border: 1px solid #333;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.card h2 {
-  color: orange;
-  margin-bottom: 15px;
+.purchase-page-container .movie-banner-details {
+  flex: 1;
 }
 
-.item-row {
+.purchase-page-container .movie-banner-badge {
+  display: inline-block;
+  background: rgba(6, 182, 212, 0.1);
+  border: 1px solid var(--accent-cyan);
+  color: var(--accent-cyan);
+  font-size: 10px;
+  letter-spacing: 2px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+}
+
+.purchase-page-container .movie-banner-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 16px;
+  letter-spacing: -0.5px;
+}
+
+.purchase-page-container .movie-banner-meta {
   display: flex;
-  justify-content: space-between;
-  margin-bottom: 12px;
+  gap: 32px;
+  flex-wrap: wrap;
 }
 
-.quantity {
-  width: 70px;
-  padding: 5px;
-  background: #2b2b2b;
-  border: 1px solid #444;
-  color: white;
-  border-radius: 6px;
-}
-
-.summary-row {
+.purchase-page-container .meta-item {
   display: flex;
-  justify-content: space-between;
-  margin: 10px 0;
+  align-items: center;
+  gap: 12px;
 }
 
-.total {
+.purchase-page-container .meta-icon {
   font-size: 20px;
-  color: gold;
+  background: rgba(255, 255, 255, 0.05);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-button {
-  width: 100%;
-  padding: 15px;
-  background: gold;
-  border: none;
-  font-weight: bold;
-  cursor: pointer;
-  border-radius: 8px;
+.purchase-page-container .meta-item small {
+  display: block;
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 600;
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+
+.purchase-page-container .meta-item p {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* =========================================
+   GRID LAYOUT
+   ========================================= */
+.purchase-page-container .purchase-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 30px;
+  align-items: start;
+}
+
+/* =========================================
+   CARDS & SECTIONS
+   ========================================= */
+.purchase-page-container .card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  padding: 24px;
+  margin-bottom: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.purchase-page-container .card h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
+  letter-spacing: 0.5px;
+}
+
+.purchase-page-container .item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.02);
   transition: 0.2s ease;
 }
 
-button:hover {
-  background: orange;
+.purchase-page-container .item-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(6, 182, 212, 0.2);
 }
 
-#qrcode {
-  margin-top: 20px;
+.purchase-page-container .item-row label {
   display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-main);
+  user-select: none;
+}
+
+.purchase-page-container .item-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent-cyan);
+  cursor: pointer;
+}
+
+.purchase-page-container .quantity {
+  width: 65px;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-color);
+  color: #fff;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 14px;
+  outline: none;
+  transition: 0.2s ease;
+}
+
+.purchase-page-container .quantity:focus {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
+}
+
+/* =========================================
+   ORDER SUMMARY
+   ========================================= */
+.purchase-page-container .summary-movie-info {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed var(--border-color);
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.purchase-page-container .summary-movie-title {
+  display: block;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--accent-cyan);
+  margin-bottom: 4px;
+}
+
+.purchase-page-container .summary-movie-screen {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.purchase-page-container .summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.purchase-page-container .summary-row span:last-child {
+  color: #fff;
+  font-weight: 600;
+}
+
+.purchase-page-container .total {
+  font-size: 20px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 16px;
+  margin-top: 16px;
+  color: #fff !important;
+}
+
+.purchase-page-container .total span:last-child {
+  color: var(--accent-cyan) !important;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.purchase-page-container button#purchaseBtn {
+  width: 100%;
+  padding: 16px;
+  background: var(--gradient-main);
+  color: #000;
+  border: none;
+  font-weight: 800;
+  font-size: 15px;
+  cursor: pointer;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+  transition: all 0.3s ease;
+  margin-top: 20px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.purchase-page-container button#purchaseBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(6, 182, 212, 0.5);
+}
+
+.purchase-page-container button#purchaseBtn:active {
+  transform: translateY(0);
+}
+
+/* =========================================
+   DIGITAL TICKET MOCKUP
+   ========================================= */
+.purchase-page-container .ticket-container {
+  width: 100%;
+  max-width: 440px;
+}
+
+.purchase-page-container .digital-ticket {
+  background: #ffffff;
+  color: #09090e;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(6, 182, 212, 0.25);
+  font-family: 'Inter', sans-serif;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.purchase-page-container .ticket-header {
+  background: #14141d;
+  color: #fff;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px dashed rgba(255, 255, 255, 0.05);
+}
+
+.purchase-page-container .ticket-brand {
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+}
+
+.purchase-page-container .ticket-badge {
+  background: var(--accent-green);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 4px 10px;
+  border-radius: 20px;
+  letter-spacing: 1px;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+}
+
+.purchase-page-container .ticket-body {
+  padding: 28px 24px;
+}
+
+.purchase-page-container .ticket-movie-title {
+  font-size: 24px;
+  font-weight: 900;
+  color: #09090e;
+  margin-bottom: 24px;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+  text-transform: uppercase;
+}
+
+.purchase-page-container .ticket-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 24px;
+}
+
+.purchase-page-container .info-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.purchase-page-container .info-label {
+  font-size: 10px;
+  color: #71717a;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.purchase-page-container .info-value {
+  font-size: 14px;
+  font-weight: 800;
+  color: #09090e;
+}
+
+/* Radical notches cut-out divider */
+.purchase-page-container .ticket-divider {
+  position: relative;
+  display: flex;
+  align-items: center;
   justify-content: center;
+  height: 20px;
+  background: #ffffff;
+}
+
+.purchase-page-container .notch {
+  width: 20px;
+  height: 20px;
+  background-color: var(--bg-color);
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  border: 1px solid var(--bg-color);
+}
+
+.purchase-page-container .notch-left {
+  left: -10px;
+}
+
+.purchase-page-container .notch-right {
+  right: -10px;
+}
+
+.purchase-page-container .ticket-dashed-line {
+  width: calc(100% - 30px);
+  border-top: 2px dashed #e4e4e7;
+  height: 1px;
+}
+
+.purchase-page-container .ticket-footer {
+  padding: 24px;
+  background: #fcfcfd;
+  border-top: 1px solid #f4f4f5;
+}
+
+.purchase-page-container .ticket-receipt {
+  margin-bottom: 24px;
+}
+
+.purchase-page-container .ticket-receipt h3 {
+  font-size: 11px;
+  color: #71717a;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+
+.purchase-page-container .ticket-receipt-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: #27272a;
+  margin-bottom: 8px;
+}
+
+.purchase-page-container .ticket-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 900;
+  color: #09090e;
+  border-top: 1px solid #e4e4e7;
+  padding-top: 12px;
+  margin-top: 12px;
+}
+
+.purchase-page-container .ticket-total-value {
+  color: var(--accent-cyan);
+  font-size: 18px;
+}
+
+.purchase-page-container .ticket-qr-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.purchase-page-container .qr-code-img {
+  background: #fff;
+  padding: 10px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e4e4e7;
+}
+
+.purchase-page-container .ticket-code-wrapper {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.purchase-page-container .ticket-code-label {
+  display: block;
+  font-size: 9px;
+  font-weight: 700;
+  color: #71717a;
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+
+.purchase-page-container .ticket-code-value {
+  font-size: 16px;
+  font-weight: 900;
+  color: #09090e;
+  letter-spacing: 0.5px;
+}
+
+/* Animations */
+.purchase-page-container .animate-ticket {
+  animation: slideInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(40px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* =========================================
+   RESPONSIVENESS
+   ========================================= */
+@media (max-width: 768px) {
+  .purchase-page-container .movie-banner-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .purchase-page-container .movie-banner-poster {
+    width: 100px;
+    height: 150px;
+  }
+
+  .purchase-page-container .movie-banner-meta {
+    justify-content: center;
+    gap: 16px;
+  }
+
+  .purchase-page-container .purchase-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .purchase-page-container .ticket-container {
+    margin: 0 auto;
+  }
 }

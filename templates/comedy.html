@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Comedy Movies{% endblock %}
+
+{% block content %}
+<section id="comedy-movies">
+    <div class="container-side-links mt-5">
+
+        <div class="text-center mb-5">
+            <h1>Comedy Movies</h1>
+            <p>Enjoy funny and entertaining comedy films for every mood.</p>
+        </div>
+
+        <div class="row">
+
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-lg">
+                    <img src="/static/poster/Superbad.jpg"
+                         class="card-img-top"
+                         alt="Comedy Movie">
+
+                    <div class="card-body">
+                        <h3 class="card-title">Superbad</h3>
+
+                        <p class="card-text">
+                            Two co-dependent high school seniors are forced to deal with separation anxiety after their plan to stage a booze-filled party goes awry.
+                        </p>
+
+                        <a href="/catalog" class="btn btn-primary">
+                            View Movie
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+{% endblock %}

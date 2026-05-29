@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Science Fiction Movies{% endblock %}
+
+{% block content %}
+<section id="sci-fi-movies">
+    <div class="container-side-links mt-5">
+
+        <div class="text-center mb-5">
+            <h1>Science Fiction Movies</h1>
+            <p>Discover futuristic adventures, space exploration, and advanced technology.</p>
+        </div>
+
+        <div class="row">
+
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-lg">
+                    <img src="/static/poster/Interstellar.jpg"
+                         class="card-img-top"
+                         alt="Sci-Fi Movie">
+
+                    <div class="card-body">
+                        <h3 class="card-title">Interstellar</h3>
+
+                        <p class="card-text">
+                            A team of explorers travels through space and time in
+                            search of humanity’s future.
+                        </p>
+
+                        <a href="/catalog" class="btn btn-primary">
+                            View Movie
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+{% endblock %}
