@@ -374,79 +374,78 @@
 
 <body>
 
-{% block navbar %}
-<div class="navbar">
-    <div class="logo">
-        <img src="{{ url_for('static', filename='image/logo.png') }}"
-             style="height:30px; vertical-align:middle;">
-    </div>    <!-- HAMBURGER & DROPDOWN MENU CONTAINER (RELATIVE) -->
-    <div class="hamburger-container" style="position: relative; display: inline-block;">
-        <div class="hamburger" onclick="toggleMenu()" style="cursor: pointer; font-size: 24px; color: white;">
-            ☰
+{% block navbar %}<div class="navbar">
+    <div class="navbar-left" style="display: flex; align-items: center; gap: 20px;">
+        <div class="logo" style="display: flex; align-items: center; gap: 10px;">
+            <img src="{{ url_for('static', filename='image/logo.png') }}" style="height:35px; width:35px; border-radius:8px; object-fit:cover; vertical-align:middle;">
+            <span data-translate="brand" style="font-size: 20px; font-weight: 800; color: white;">🎬 MovieMania</span>
         </div>
-        <div id="menuDropdown" class="dropdown" style="position: absolute; top: 100%; left: 0; z-index: 1000; min-width: 150px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px;">
-            <a href="{{ url_for('home') }}" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;" data-translate="home">Home</a>
-             <a href="{{ url_for('user_movies_route', user_id=1) }}" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;" data-translate="movie_list">Movie-List</a>
-             <a href="{{ url_for('trendy') }}" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;" data-translate="trending">Trending</a>
-             <a href="{{ url_for('series') }}" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;" data-translate="series">Series</a>
-             <a href="{{ url_for('dashboard') }}" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;" data-translate="dashboard">📊 Dashboard</a>
-        </div>
-    </div>
-
-    <div class="logo" style="display: flex; align-items: center; gap: 15px;">
-        <span data-translate="brand">🎬 MovieMania</span>
-        <a href="/catalog" style="font-size: 13px; color: var(--accent); font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 4px;" data-translate="cinema_portal">🍿 Cinema Portal</a>
-        <a href="/dashboard" style="font-size: 13px; color: #06b6d4; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 4px;" data-translate="analytics">📊 Analytics</a>
-    </div>
-
-    <!-- GENRES -->
-    <div class="categories">
-        <button onclick="toggleCategories(this)" data-translate="genres">
-            Genres ▼
-        </button>
-        <div id="categoryDropdown"
-             class="dropdown">
-            <a href="{{ url_for('recommend') }}" data-translate="recommend">Recommend</a>
-           <a href="{{ url_for('action') }}" data-translate="action">Action</a>
-            <a href="{{ url_for('comedy') }}" data-translate="comedy">Comedy</a>
-           <a href="{{ url_for('horror') }}" data-translate="horror">Horror</a>
-           <a href="{{ url_for('sci_fi') }}" data-translate="sci_fi">Sci-Fi</a>
+        <!-- Desktop Nav Links (hidden on mobile) -->
+        <div class="desktop-nav-links" style="display: flex; align-items: center; gap: 15px;">
+            <a href="{{ url_for('home') }}" class="nav-item" data-translate="home">Home</a>
+            <a href="{{ url_for('user_movies_route', user_id=1) }}" class="nav-item" data-translate="movie_list">Movie-List</a>
+            <a href="{{ url_for('trendy') }}" class="nav-item" data-translate="trending">Trending</a>
+            <a href="{{ url_for('series') }}" class="nav-item" data-translate="series">Series</a>
+            <a href="{{ url_for('dashboard') }}" class="nav-item" data-translate="dashboard">📊 Dashboard</a>
+            <a href="/catalog" class="nav-item portal-link" data-translate="cinema_portal">🍿 Cinema Portal</a>
+            <a href="/dashboard" class="nav-item analytics-link" data-translate="analytics">📊 Analytics</a>
         </div>
     </div>
 
-    <!-- MAIN LANGUAGE SELECTOR -->
-    <div class="main-language-container" style="display: flex; align-items: center; margin-left: auto; margin-right: 15px;">
-        <select id="mainLanguageDropdown" style="background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; outline: none; transition: 0.3s; border-color: rgba(255, 255, 255, 0.2);">
-            <option value="en" style="background: #121212;">🇬🇧 English</option>
-            <option value="es" style="background: #121212;">🇪🇸 Español</option>
-            <option value="fr" style="background: #121212;">🇫🇷 Français</option>
-            <option value="de" style="background: #121212;">🇩🇪 Deutsch</option>
-        </select>
-    </div>
+    <div class="navbar-right" style="display: flex; align-items: center; gap: 15px; margin-left: auto;">
+        <!-- GENRES -->
+        <div class="categories" style="position: relative;">
+            <button onclick="toggleCategories(this)" data-translate="genres" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; outline: none; transition: 0.3s;">
+                Genres ▼
+            </button>
+            <div id="categoryDropdown" class="dropdown" style="position: absolute; top: 100%; right: 0; z-index: 1000; min-width: 150px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px;">
+                <a href="{{ url_for('recommend') }}" data-translate="recommend">Recommend</a>
+                <a href="{{ url_for('action') }}" data-translate="action">Action</a>
+                <a href="{{ url_for('comedy') }}" data-translate="comedy">Comedy</a>
+                <a href="{{ url_for('horror') }}" data-translate="horror">Horror</a>
+                <a href="{{ url_for('sci_fi') }}" data-translate="sci_fi">Sci-Fi</a>
+            </div>
+        </div>
 
-    <!-- NAVBAR LOGIN -->
-    <div id="loginSection"
-         class="navbar-login">
-        <input id="username"
-               type="text"
-               placeholder="Username">
-        <input id="password"
-               type="password"
-               placeholder="Password">
-        <button onclick="login()">
-            Login
-        </button>
-    </div>
+        <!-- MAIN LANGUAGE SELECTOR -->
+        <div class="main-language-container">
+            <select id="mainLanguageDropdown" style="background: rgba(255, 255, 255, 0.05); color: white; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; outline: none; transition: 0.3s; border-color: rgba(255, 255, 255, 0.2);">
+                <option value="en" style="background: #121212;">🇬🇧 English</option>
+                <option value="es" style="background: #121212;">🇪🇸 Español</option>
+                <option value="fr" style="background: #121212;">🇫🇷 Français</option>
+                <option value="de" style="background: #121212;">🇩🇪 Deutsch</option>
+            </select>
+        </div>
 
+        <!-- NAVBAR LOGIN -->
+        <div id="loginSection" class="navbar-login" style="display: flex; align-items: center; gap: 8px;">
+            <input id="username" type="text" placeholder="Username" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; font-size: 13px; width: 100px; outline: none;">
+            <input id="password" type="password" placeholder="Password" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; font-size: 13px; width: 100px; outline: none;">
+            <button onclick="login()" style="background: var(--accent); color: black; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 13px;">Login</button>
+        </div>
 
-    <!-- LOGOUT -->
-    <div id="logoutContainer"
-         class="navbar-logout"
-         style="display:none;">
-        <button onclick="logout()"
-                class="logout-btn">
-            Logout
-        </button>
+        <!-- LOGOUT -->
+        <div id="logoutContainer" class="navbar-logout" style="display:none;">
+            <button onclick="logout()" class="logout-btn" style="background: #ff4d4d; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 13px;">
+                Logout
+            </button>
+        </div>
+
+        <!-- Mobile Hamburger (hidden on desktop) -->
+        <div class="hamburger-container" style="position: relative; display: none;">
+            <div class="hamburger" onclick="toggleMenu()" style="cursor: pointer; font-size: 24px; color: white; padding: 5px;">
+                ☰
+            </div>
+            <div id="menuDropdown" class="dropdown" style="position: absolute; top: 100%; right: 0; z-index: 1000; min-width: 150px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px;">
+                <a href="{{ url_for('home') }}" data-translate="home">Home</a>
+                <a href="{{ url_for('user_movies_route', user_id=1) }}" data-translate="movie_list">Movie-List</a>
+                <a href="{{ url_for('trendy') }}" data-translate="trending">Trending</a>
+                <a href="{{ url_for('series') }}" data-translate="series">Series</a>
+                <a href="{{ url_for('dashboard') }}" data-translate="dashboard">📊 Dashboard</a>
+                <a href="/catalog" data-translate="cinema_portal">🍿 Cinema Portal</a>
+                <a href="/dashboard" data-translate="analytics">📊 Analytics</a>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -656,6 +655,20 @@
 {% block comedy_content %}{% endblock %}
 {% block horror_content %}{% endblock %}
 {% block sci_fi_content %}{% endblock %}
+
+
+<!-- =========================
+     7. SOCIAL MEDIA SECTION
+========================== -->
+<div class="social-media-section" style="background: rgba(255,255,255,0.02); border-top: 1px solid var(--border); padding: 40px 20px; text-align: center;">
+    <h3 style="font-size: 16px; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); margin-bottom: 20px; font-weight: 700;">Connect With MovieMania</h3>
+    <div class="social-icons" style="display: flex; justify-content: center; gap: 20px;">
+        <a href="https://facebook.com" target="_blank" class="social-icon facebook" style="font-size: 24px; color: #1877f2; background: rgba(24, 119, 242, 0.1); width: 50px; height: 50px; display: inline-flex; justify-content: center; align-items: center; border-radius: 50%; transition: all 0.3s ease; text-decoration: none;">📘</a>
+        <a href="https://twitter.com" target="_blank" class="social-icon twitter" style="font-size: 24px; color: #1da1f2; background: rgba(29, 161, 242, 0.1); width: 50px; height: 50px; display: inline-flex; justify-content: center; align-items: center; border-radius: 50%; transition: all 0.3s ease; text-decoration: none;">🐦</a>
+        <a href="https://instagram.com" target="_blank" class="social-icon instagram" style="font-size: 24px; color: #e1306c; background: rgba(225, 48, 108, 0.1); width: 50px; height: 50px; display: inline-flex; justify-content: center; align-items: center; border-radius: 50%; transition: all 0.3s ease; text-decoration: none;">📸</a>
+        <a href="https://youtube.com" target="_blank" class="social-icon youtube" style="font-size: 24px; color: #ff0000; background: rgba(255, 0, 0, 0.1); width: 50px; height: 50px; display: inline-flex; justify-content: center; align-items: center; border-radius: 50%; transition: all 0.3s ease; text-decoration: none;">📺</a>
+    </div>
+</div>
 
 
 <!-- =========================

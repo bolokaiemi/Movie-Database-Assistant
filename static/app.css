@@ -1564,5 +1564,72 @@ header{
   line-height: 1.6;
 }
 
+/* =========================
+   MODERN RESPONSIVE NAVBAR
+========================= */
+.navbar {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 15px 40px !important;
+    background: rgba(18, 18, 18, 0.95) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border-bottom: 1px solid var(--border) !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 999 !important;
+}
+
+.desktop-nav-links .nav-item {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    padding: 6px 12px;
+    border-radius: 8px;
+}
+
+.desktop-nav-links .nav-item:hover {
+    color: var(--accent);
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateY(-1px);
+}
+
+.desktop-nav-links .portal-link {
+    color: var(--accent) !important;
+}
+
+.desktop-nav-links .analytics-link {
+    color: #06b6d4 !important;
+}
+
+/* SOCIAL ICON HOVER ACTIONS */
+.social-icon:hover {
+    transform: translateY(-5px) scale(1.08);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+    background-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* RESPONSIVE LAYOUT MEDIA QUERIES */
+@media (max-width: 1024px) {
+    .desktop-nav-links {
+        display: none !important;
+    }
+    .navbar-right .hamburger-container {
+        display: block !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .navbar {
+        padding: 15px 20px !important;
+    }
+    .navbar-login {
+        display: none !important; /* Hide credentials input boxes on mobile viewports for clean spacing */
+    }
+}
+
 
 
