@@ -1272,5 +1272,281 @@ header{
 
 }
 
+/* =========================================
+   CINEMA LOBBY SHOWTIMES BOARD
+========================================= */
+
+.cinema-lobby-board {
+  width: 100%;
+  max-width: 1200px;
+  margin: 120px auto 40px auto;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+.lobby-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.lobby-badge {
+  display: inline-block;
+  background: rgba(34, 211, 238, 0.12);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  color: #22d3ee;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+}
+
+.lobby-header h1 {
+  font-size: 38px;
+  font-weight: 800;
+  color: white;
+  margin: 0 0 12px 0;
+  letter-spacing: -0.5px;
+}
+
+.lobby-header h1 span {
+  color: #ff3d3d;
+}
+
+.lobby-header p {
+  font-size: 16px;
+  color: #94a3b8;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.lobby-screens-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.lobby-screen-card {
+  position: relative;
+  background: rgba(23, 23, 23, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.lobby-screen-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+}
+
+.lobby-screen-card.imax:hover {
+  border-color: rgba(34, 211, 238, 0.4);
+  box-shadow: 0 15px 35px rgba(34, 211, 238, 0.15);
+}
+
+.lobby-screen-card.vip:hover {
+  border-color: rgba(245, 158, 11, 0.4);
+  box-shadow: 0 15px 35px rgba(245, 158, 11, 0.15);
+}
+
+.lobby-screen-card.standard:hover {
+  border-color: rgba(255, 61, 61, 0.4);
+  box-shadow: 0 15px 35px rgba(255, 61, 61, 0.15);
+}
+
+.screen-glow {
+  position: absolute;
+  top: -50px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 150px;
+  height: 60px;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0.3;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.imax .screen-glow { background: #22d3ee; }
+.vip .screen-glow { background: #f59e0b; }
+.standard .screen-glow { background: #ff3d3d; }
+
+.screen-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.screen-number {
+  font-size: 11px;
+  font-weight: 800;
+  color: #64748b;
+  letter-spacing: 1px;
+}
+
+.screen-tag {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.imax-tag { background: rgba(34, 211, 238, 0.12); color: #22d3ee; }
+.vip-tag { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
+.standard-tag { background: rgba(255, 61, 61, 0.12); color: #ff3d3d; }
+
+.screen-body {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 24px;
+}
+
+.screen-body h3 {
+  font-size: 24px;
+  font-weight: 800;
+  color: white;
+  margin: 0 0 10px 0;
+}
+
+.screen-meta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.screen-meta span {
+  font-size: 12px;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.seats-left.occupied { color: #f87171; border-color: rgba(248, 113, 113, 0.15); }
+.seats-left.comfy { color: #fbbf24; border-color: rgba(251, 191, 36, 0.15); }
+.seats-left.plenty { color: #34d399; border-color: rgba(52, 211, 153, 0.15); }
+
+.screen-footer {
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 16px;
+}
+
+.screen-footer small {
+  display: block;
+  font-size: 10px;
+  font-weight: 800;
+  color: #475569;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.showtime-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.showtime-btn {
+  flex: 1;
+  display: block;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: white;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s, transform 0.1s;
+}
+
+.showtime-btn:hover {
+  background: #ff3d3d;
+  border-color: #ff3d3d;
+  transform: translateY(-2px);
+}
+
+.showtime-btn:active {
+  transform: translateY(0);
+}
+
+/* =========================================
+   PERSONAL MOVIE VAULT HERO
+========================================= */
+
+.movie-vault-hero {
+  width: 100%;
+  max-width: 1200px;
+  margin: 120px auto 40px auto;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+.vault-hero-content {
+  text-align: center;
+  background: rgba(23, 23, 23, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 40px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.vault-badge {
+  display: inline-block;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #f59e0b;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+}
+
+.vault-hero-content h1 {
+  font-size: 38px;
+  font-weight: 800;
+  color: white;
+  margin: 0 0 12px 0;
+  letter-spacing: -0.5px;
+}
+
+.vault-hero-content h1 span {
+  color: #f59e0b;
+}
+
+.vault-hero-content p {
+  font-size: 16px;
+  color: #94a3b8;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
 
 

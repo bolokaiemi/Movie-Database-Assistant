@@ -181,6 +181,21 @@ def create_table():
         )
     """)
 
+    # =========================
+    # MOVIE COMMENTS TABLE
+    # =========================
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS movie_comments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            movie_id INTEGER,
+            username TEXT,
+            comment TEXT,
+            rating INTEGER DEFAULT 5,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(movie_id) REFERENCES movie_catalog(id)
+        )
+    """)
+
     conn.commit()
     conn.close()
 
@@ -467,6 +482,34 @@ def list_catalog_movies():
     conn.close()
 
     return movies
+
+
+# =========================
+# MOVIE COMMENTS FUNCTIONS
+# =========================
+def add_movie_comment(movie_id, username, comment, rating=5):
+    conn = connect()
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO movie_comments (movie_id, username, comment, rating)
+        VALUES (?, ?, ?, ?)
+    """, (movie_id, username, comment, rating))
+    conn.commit()
+    conn.close()
+
+
+def get_movie_comments(movie_id):
+    conn = connect()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT username, comment, rating, created_at
+        FROM movie_comments
+        WHERE movie_id = ?
+        ORDER BY id DESC
+    """, (movie_id,))
+    rows = cur.fetchall()
+    conn.close()
+    return rows
 
 
 # =========================

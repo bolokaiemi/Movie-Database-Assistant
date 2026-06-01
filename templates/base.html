@@ -374,9 +374,6 @@
 
 <body>
 
-<!-- =========================================
-     1. NAVBAR (DUAL-THEME: DEFAULTS TO MOVIEMANIA NETFLIX-THEME)
-========================================== -->
 {% block navbar %}
 <div class="navbar">
     <div class="logo">
@@ -393,15 +390,15 @@
             <a href="{{ url_for('home') }}" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;">Home</a>
              <a href="{{ url_for('user_movies_route', user_id=1) }}" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;">Movie-List</a>
              <a href="{{ url_for('trendy') }}" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;">Trending</a>
-            <a href="{{ url_for('series') }}" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;">Series</a>
+             <a href="{{ url_for('series') }}" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;">Series</a>
+             <a href="{{ url_for('dashboard') }}" style="display: block; padding: 8px 12px; color: white; text-decoration: none; font-size: 14px;">📊 Dashboard</a>
         </div>
     </div>
-
-
 
     <div class="logo" style="display: flex; align-items: center; gap: 15px;">
         <span>🎬 MovieMania</span>
         <a href="/catalog" style="font-size: 13px; color: var(--accent); font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 4px;">🍿 Cinema Portal</a>
+        <a href="/dashboard" style="font-size: 13px; color: #06b6d4; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 4px;">📊 Analytics</a>
     </div>
 
     <!-- GENRES -->
@@ -515,8 +512,6 @@
     {% endblock %}
 </div>
 
-{% include "comment-section.html" %}
-
 <!-- =========================================
      4. PERSISTENT CHAT TRIGGER BUTTON
 ========================================== -->
@@ -560,6 +555,7 @@
                     Genres ▼
                 </button>
                 <div class="dropdown" style="position: absolute; background: #1e293b; border: 1px solid var(--border); border-radius: 8px; padding: 5px 0; z-index: 1002; min-width: 120px; top: 100%; left: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+                    <a href="#" onclick="sendTip('Give me a great action movie recommendation')" style="display: block; padding: 6px 15px; color: white; font-size: 13px; text-decoration: none;">Recommend</a>
                     <a href="#" onclick="sendTip('Give me a great action movie recommendation')" style="display: block; padding: 6px 15px; color: white; font-size: 13px; text-decoration: none;">Action</a>
                     <a href="#" onclick="sendTip('Funniest comedy movies ever')" style="display: block; padding: 6px 15px; color: white; font-size: 13px; text-decoration: none;">Comedy</a>
                     <a href="#" onclick="sendTip('Scariest horror movies')" style="display: block; padding: 6px 15px; color: white; font-size: 13px; text-decoration: none;">Horror</a>
@@ -578,6 +574,7 @@
     <div class="cinema-nav-links">
         <a href="/" title="Home">🏠</a>
         <a href="/catalog" title="Catalog">🎥</a>
+        <a href="/dashboard" title="Dashboard">📊</a>
         <a href="/movies/1" title="Movie List">📋</a>
         <a href="/refresh_banners" title="Refresh Banners">🔄</a>
     </div>
@@ -651,49 +648,6 @@
 {% block horror_content %}{% endblock %}
 {% block sci_fi_content %}{% endblock %}
 
-
-<!-- =========================
-     6b. CLASSMATE FEEDBACK SECTION (COLLAPSIBLE EXPANDER AT BOTTOM)
-========================= -->
-<div id="feedbackSection" style="display:none; width: 100%; max-width: 800px; margin: 30px auto 10px auto; padding: 0 20px;">
-    <details style="background: rgba(30, 41, 59, 0.35); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.3); transition: 0.3s;">
-        <summary style="cursor: pointer; padding: 16px 20px; font-size: 15px; color: var(--accent); font-weight: 600; list-style: none; display: flex; justify-content: space-between; align-items: center; user-select: none; outline: none;">
-            <span style="display: flex; align-items: center; gap: 8px;">💬 Leave a Comment / Feedback</span>
-            <span style="font-size: 11px; opacity: 0.7; background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 12px; font-weight: normal;">Click to open</span>
-        </summary>
-        <div style="padding: 5px 20px 20px 20px; border-top: 1px solid rgba(255,255,255,0.05);">
-            <textarea id="feedbackText" placeholder="Enter your comments, reviews, or project feedback here..." style="width: 100%; height: 90px; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: #0f172a; color: white; font-size: 13px; outline: none; resize: none; margin-bottom: 12px; font-family: inherit; box-sizing: border-box;"></textarea>
-            <button onclick="submitFeedback()" style="background: var(--accent); color: black; font-weight: bold; border: none; padding: 10px 24px; border-radius: 8px; cursor: pointer; font-size: 13px; transition: 0.3s; box-shadow: 0 4px 10px rgba(255, 60, 60, 0.25);">Submit Feedback</button>
-        </div>
-    </details>
-</div>
-
-<!-- =========================
-     7. CINEMA ANALYTICS PORTAL (HOLISTIC VIEW)
-========================= -->
-<div class="leaderboard" style="padding: 30px 20px; margin-top: 40px;">
-    <h2>📊 Cinema Analytics Dashboard</h2>
-    
-    <!-- Admin view locked (shown when not logged in) -->
-    <div id="analyticsLockedContainer" style="width: 100%; border-radius: 16px; background: rgba(30, 41, 59, 0.25); border: 1px solid var(--border); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); padding: 50px 20px; text-align: center; margin-top: 20px;">
-        <div style="font-size: 54px; margin-bottom: 20px; filter: drop-shadow(0 0 10px rgba(255, 60, 60, 0.2));">🔒</div>
-        <h3 style="color: #ff3c3c; font-size: 20px; margin-bottom: 12px; font-weight: 600;">Cinema Administrator Analytics Portal</h3>
-        <p style="color: #94a3b8; max-width: 550px; margin: 0 auto 25px auto; font-size: 14px; line-height: 1.6;">
-            This holistic dashboard tracks peak interaction times, movie request popularity, sentiment-based satisfaction scores, ticket conversions, and customer intents. Log in to access the administrator dashboard.
-        </p>
-        <button onclick="focusLogin()" style="background: var(--accent); color: black; font-weight: bold; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-size: 14px; transition: 0.3s; box-shadow: 0 4px 12px rgba(255, 60, 60, 0.3);">Go to Admin Login</button>
-    </div>
-
-    <!-- Admin view unlocked (shown when logged in) -->
-    <div id="analyticsDashboardContainer" style="display: none; width: 100%; border-radius: 16px; overflow: hidden; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); padding: 12px; margin-top: 20px; position: relative;">
-        <div style="color: #94a3b8; font-size: 13px; margin-bottom: 15px; padding: 0 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-            <span style="display: flex; align-items: center; gap: 6px;">🟢 <strong style="color: white;">Live Streamlit Server Connected</strong> &bull; Private Admin View</span>
-            <a href="http://127.0.0.1:8501" target="_blank" style="color: var(--accent); font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 4px; border-bottom: 1px dashed var(--accent);">Open Fullscreen ↗</a>
-        </div>
-        <!-- Embedded Streamlit Analytics Dashboard -->
-        <iframe src="http://127.0.0.1:8501/?embed=true" style="width: 100%; height: 750px; border: none; border-radius: 10px; display: block; background: #0c0f17;" title="Cinema Analytics Dashboard"></iframe>
-    </div>
-</div>
 
 <!-- =========================
      8. FOOTER

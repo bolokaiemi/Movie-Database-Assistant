@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Cinema Administrator Dashboard - Analytics{% endblock %}
+
+{% block navbar %}
+<nav class="cinema-navbar">
+    <div class="cinema-logo">
+      Stoplight🌟
+    </div>
+    <div class="cinema-nav-links">
+        <a href="/">🏠</a>
+        <a href="/catalog">🎥</a>
+        <a href="/dashboard">📊</a>
+        <a href="/movies/1">📋</a>
+        <a href="/refresh_banners">🔄</a>
+    </div>
+</nav>
+{% endblock %}
+
+{% block banner_content %}
+<div class="movie-vault-hero" style="background: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.95)), url('/static/image/cinema_audience.png') center/cover; padding: 60px 20px; text-align: center;">
+    <div class="vault-hero-content">
+        <span class="vault-badge" style="background: rgba(6, 182, 212, 0.2); color: #06b6d4; border: 1px solid rgba(6,182,212,0.3);">📊 ADMINISTRATOR VIEW</span>
+        <h1 style="font-size: 42px; margin-top: 10px;">Cinema <span>Analytics Portal</span></h1>
+        <p style="color: #94a3b8; max-width: 600px; margin: 10px auto 0 auto;">Audit real-time interactive dashboards, traffic distribution, conversion rates, and user sentiment analysis.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 1000px; margin: 40px auto; padding: 0 20px;">
+    <!-- HOLISTIC ANALYTICS VIEW -->
+    <div class="leaderboard" style="padding: 0; background: none; box-shadow: none; border: none; margin-top: 0;">
+        
+        <!-- Admin view locked (shown when not logged in) -->
+        <div id="analyticsLockedContainer" style="width: 100%; border-radius: 20px; background: rgba(30, 41, 59, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5), 0 0 25px rgba(6, 182, 212, 0.05); padding: 60px 20px; text-align: center; box-sizing: border-box; backdrop-filter: blur(12px);">
+            <div style="font-size: 64px; margin-bottom: 20px; filter: drop-shadow(0 0 15px rgba(255, 60, 60, 0.25));">🔒</div>
+            <h3 style="color: #ff3c3c; font-size: 22px; margin-bottom: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Holistic Analytics Portal Locked</h3>
+            <p style="color: #cbd5e1; max-width: 580px; margin: 0 auto 30px auto; font-size: 14.5px; line-height: 1.7;">
+                This secure dashboard tracks peak interaction times, movie request popularity distributions, NLP-based user satisfaction scores, ticket conversion rates, and customer intent audits. 
+            </p>
+            <p style="color: #94a3b8; font-size: 13.5px; margin-bottom: 25px;">
+                Please log in using the administrator control block in the top navbar (Username: <code>student</code> | Password: <code>cinema123</code>).
+            </p>
+            <button onclick="focusLogin()" style="background: var(--accent); color: black; font-weight: bold; border: none; padding: 14px 32px; border-radius: 10px; cursor: pointer; font-size: 14px; transition: 0.3s; box-shadow: 0 6px 15px rgba(255, 60, 60, 0.35);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">Focus Admin Login</button>
+        </div>
+
+        <!-- Admin view unlocked (shown when logged in) -->
+        <div id="analyticsDashboardContainer" style="display: none; width: 100%; border-radius: 20px; overflow: hidden; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 15px 45px rgba(0, 0, 0, 0.6); padding: 15px; box-sizing: border-box; position: relative; backdrop-filter: blur(12px);">
+            <div style="color: #94a3b8; font-size: 13.5px; margin-bottom: 15px; padding: 0 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <span style="display: flex; align-items: center; gap: 6px;">🟢 <strong style="color: white;">Live Streamlit Analytics Server Connected</strong> &bull; Secure Administrator Session</span>
+                <a href="http://127.0.0.1:8501" target="_blank" style="color: var(--accent); font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 4px; border-bottom: 1px dashed var(--accent);">Open Fullscreen ↗</a>
+            </div>
+            <!-- Embedded Streamlit Analytics Dashboard -->
+            <iframe src="http://127.0.0.1:8501/?embed=true" style="width: 100%; height: 780px; border: none; border-radius: 12px; display: block; background: #0c0f17;" title="Cinema Analytics Dashboard"></iframe>
+        </div>
+    </div>
+
+    <!-- CLASSMATE FEEDBACK SECTION (Toggled by login state, compiles under admin views) -->
+    <div id="feedbackSection" style="display:none; width: 100%; margin: 40px auto 10px auto; padding: 0; box-sizing: border-box;">
+        <details style="background: rgba(30, 41, 59, 0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: 0.3s; backdrop-filter: blur(12px);" open>
+            <summary style="cursor: pointer; padding: 18px 24px; font-size: 16px; color: var(--accent); font-weight: 700; list-style: none; display: flex; justify-content: space-between; align-items: center; user-select: none; outline: none; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <span style="display: flex; align-items: center; gap: 8px;">💬 Project Review & Classmate Feedback</span>
+                <span style="font-size: 11px; opacity: 0.7; background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 12px; font-weight: normal;">Expander panel</span>
+            </summary>
+            <div style="padding: 24px;">
+                <p style="color: #94a3b8; font-size: 14px; margin-top: 0; margin-bottom: 15px;">Leave feedback or review notes regarding the Cinema Analytics dashboard, multi-turn AI features, and user database models.</p>
+                <textarea id="feedbackText" placeholder="Enter your comments, reviews, or project feedback here..." style="width: 100%; height: 100px; padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: #0f172a; color: white; font-size: 14px; outline: none; resize: none; margin-bottom: 15px; font-family: inherit; box-sizing: border-box;"></textarea>
+                <button onclick="submitFeedback()" style="background: var(--accent); color: black; font-weight: bold; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-size: 13.5px; transition: 0.3s; box-shadow: 0 4px 12px rgba(255, 60, 60, 0.25);">Submit Feedback</button>
+            </div>
+        </details>
+    </div>
+</div>
+{% endblock %}

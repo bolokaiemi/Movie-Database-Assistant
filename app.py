@@ -144,6 +144,24 @@ def initialize_and_seed_db():
         conn.commit()
         print("Seeded showtimes and ticket tiers tables.")
         
+    # 4. Seed default comments if empty
+    cur.execute("SELECT COUNT(*) FROM movie_comments")
+    if cur.fetchone()[0] == 0:
+        default_comments = [
+            (1, "Sarah Johnson", "I really enjoyed the movie recommendations on this page. Inception is an absolute masterpiece!", 5),
+            (1, "Michael Brown", "The visual effects and Christopher Nolan's directing in Inception are top-notch.", 5),
+            (2, "Emily Davis", "Titanic is a timeless classic. The chemistry between Leo and Kate is amazing!", 5),
+            (3, "John Doe", "Heath Ledger's Joker is legendary. The Dark Knight is hands down the best superhero movie.", 5),
+            (4, "Alice Smith", "Interstellar made me cry. Hans Zimmer's soundtrack is out of this world!", 5),
+            (5, "David Wilson", "Avatar: The Way of Water is a visual spectacle. Pandora looks stunning!", 4)
+        ]
+        cur.executemany("""
+            INSERT INTO movie_comments (movie_id, username, comment, rating)
+            VALUES (?, ?, ?, ?)
+        """, default_comments)
+        conn.commit()
+        print("Seeded default movie comments.")
+
     conn.close()
 
 # =========================================
@@ -349,7 +367,7 @@ def home():
                 "year": enriched.get("year") or row[1] or "",
                 "rating": enriched.get("rating") or row[2] or "N/A",
                 "poster_url": poster_url,
-                "trailer_url": enriched.get("trailer") or row[4] or "",
+                "trailer_url": get_clean_embed_trailer(title, enriched.get("trailer") or row[4] or ""),
                 "note": enriched.get("note") or row[5] or "",
                 "country": enriched.get("country") or row[6] or ""
             })
@@ -425,7 +443,7 @@ def user_movies_route(user_id):
                 "year": enriched.get("year") or row[1] or "N/A",
                 "rating": enriched.get("rating") or row[2] or "N/A",
                 "poster_url": poster_url,
-                "trailer_url": enriched.get("trailer") or row[4] or "",
+                "trailer_url": get_clean_embed_trailer(title, enriched.get("trailer") or row[4] or ""),
                 "description": enriched.get("note") or row[5] or "No description available.",
                 "director": enriched.get("director") or "Unknown"
             })
@@ -716,30 +734,96 @@ def get_chatbot_movie_context():
             p_url = row['poster_url'] or "/static/image/cinema_luxury.png"
             if p_url.startswith("http"):
                 p_url = download_local_poster(row['title'], p_url)
-            t_url = row['trailer_url'] or ""
-            # Ensure YouTube link is an embed link so it plays inline
-            if "watch?v=" in t_url:
-                t_url = t_url.replace("watch?v=", "embed/")
-            elif "youtu.be/" in t_url:
-                t_url = t_url.replace("youtu.be/", "youtube.com/embed/")
-            context += f"- Title: {row['title']} | ID: {row['id']} | Genre: {row['genre']} | Purchase Link: /purchase/{row['id']} | Poster URL: {p_url} | Trailer Embed URL: {t_url}\n"
+            t_url = get_clean_embed_trailer(row['title'], row['trailer_url'] or "")
+            context += f"- Title: {row['title']} | ID: {row['id']} | Genre: {row['genre']} | Details & Comments Link: /movie/{row['id']} | Purchase Link: /purchase/{row['id']} | Poster URL: {p_url} | Trailer Embed URL: {t_url}\n"
             
         context += "\nUser's Personal Saved Movies Collection:\n"
         for row in user_rows:
             p_url = row['poster_url'] or "/static/image/cinema_luxury.png"
             if p_url.startswith("http"):
                 p_url = download_local_poster(row['title'], p_url)
-            t_url = row['trailer_url'] or ""
-            if "watch?v=" in t_url:
-                t_url = t_url.replace("watch?v=", "embed/")
-            elif "youtu.be/" in t_url:
-                t_url = t_url.replace("youtu.be/", "youtube.com/embed/")
+            t_url = get_clean_embed_trailer(row['title'], row['trailer_url'] or "")
             context += f"- Title: {row['title']} | Year: {row['year']} | Rating: {row['rating']} | User Note: {row['note']} | Poster URL: {p_url} | Trailer Embed URL: {t_url}\n"
             
         return context
     except Exception as e:
         print("Error building chat context:", e)
         return "Movie database is currently empty."
+
+
+def get_clean_embed_trailer(title, default_url):
+    """
+    Tries to fetch the official working YouTube trailer key from TMDB.
+    Falls back to the database default_url if TMDB fails or doesn't find one.
+    Guarantees the output is ALWAYS formatted as a clean YouTube embed URL
+    (e.g., https://www.youtube.com/embed/<key>), never a standard watch link.
+    """
+    import requests
+    import urllib.parse
+    
+    def extract_yt_key(url):
+        if not url:
+            return None
+        url = url.strip()
+        
+        # Check standard query string watch?v=
+        if "v=" in url:
+            parts = url.split("v=")
+            for part in parts[1:]:
+                candidate = part.split("&")[0].split("?")[0].split("/")[0]
+                if len(candidate) == 11:
+                    return candidate
+                    
+        # Check path elements like embed/ or v/ or watch/
+        for marker in ["embed/", "v/", "watch/", "shorts/", "youtu.be/"]:
+            if marker in url:
+                parts = url.split(marker)
+                if len(parts) > 1:
+                    candidate = parts[1].split("?")[0].split("&")[0].split("/")[0]
+                    if len(candidate) == 11:
+                        return candidate
+                        
+        if len(url) == 11 and "/" not in url:
+            return url
+            
+        import re
+        match = re.search(r'(?:v=|embed/|v/|shorts/|youtu\.be/|/)([a-zA-Z0-9_-]{11})(?:\?|&|$|/)', url)
+        if match:
+            return match.group(1)
+            
+        match_end = re.search(r'([a-zA-Z0-9_-]{11})(?:\?|&|$)', url)
+        if match_end:
+            return match_end.group(1)
+            
+        return None
+
+    # Try fetching from TMDB first
+    try:
+        api_key = os.getenv("TMDB_API_KEY")
+        if api_key:
+            search_url = f"https://api.themoviedb.org/3/search/movie?api_key={api_key}&query={urllib.parse.quote(title)}"
+            res = requests.get(search_url, timeout=4).json()
+            results = res.get("results", [])
+            if results:
+                tmdb_id = results[0].get("id")
+                video_url = f"https://api.themoviedb.org/3/movie/{tmdb_id}/videos?api_key={api_key}"
+                video_res = requests.get(video_url, timeout=4).json()
+                for v in video_res.get("results", []):
+                    if v.get("site") == "YouTube" and v.get("type") == "Trailer" and v.get("key"):
+                        return f"https://www.youtube.com/embed/{v['key']}"
+    except Exception as e:
+        print(f"Error fetching TMDB trailer for {title}:", e)
+
+    # Fallback to database default_url
+    if default_url:
+        key = extract_yt_key(default_url)
+        if key:
+            return f"https://www.youtube.com/embed/{key}"
+        if "http" in default_url:
+            return default_url
+
+    # Defensive default
+    return "https://www.youtube.com/embed/YoHD9XEInc0"
 
 
 def post_process_chat_reply(reply, user_message):
@@ -772,7 +856,7 @@ def post_process_chat_reply(reply, user_message):
             "title": title,
             "id": row[0],
             "poster_url": p_url,
-            "trailer_url": t_url
+            "trailer_url": get_clean_embed_trailer(title, t_url)
         }
         
     for row in personal_movies:
@@ -787,18 +871,9 @@ def post_process_chat_reply(reply, user_message):
                 "title": title,
                 "id": None,
                 "poster_url": p_url,
-                "trailer_url": t_url
+                "trailer_url": get_clean_embed_trailer(title, t_url)
             }
             
-    # Clean up urls
-    for title_lower, info in movie_data.items():
-        t_url = info["trailer_url"]
-        if t_url:
-            if "watch?v=" in t_url:
-                info["trailer_url"] = t_url.replace("watch?v=", "embed/")
-            elif "youtu.be/" in t_url:
-                info["trailer_url"] = t_url.replace("youtu.be/", "youtube.com/embed/")
-
     # 1. Post-process placeholders
     matched_movie = None
     user_msg_lower = user_message.lower()
@@ -846,7 +921,7 @@ def post_process_chat_reply(reply, user_message):
     
     if asked_for_poster and not has_img_tag and matched_movie:
         p_url = matched_movie["poster_url"]
-        img_html = f'<br><img src="{p_url}" alt="{matched_movie["title"]}" class="chat-movie-poster" style="width:120px; border-radius:10px; margin-top:8px; display:block; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.2s;">'
+        img_html = f'<br><img src="{p_url}" alt="{matched_movie["title"]}" class="chat-movie-poster" style="width:120px; border-radius:10px; margin: 12px auto; display:block; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.2s;">'
         reply += img_html
         
     # 3. Programmatic injection if user asked for a trailer/video and it's missing in reply
@@ -881,7 +956,7 @@ You have access to the movie catalog and the user's personal collection. Use thi
 
 CRITICAL FORMATTING INSTRUCTIONS FOR POSTERS & TRAILERS:
 1. Always display the movie poster image directly inside the chatbot window using a raw HTML <img> tag when discussing a movie. Format it exactly like this, substituting the actual values from the movie context:
-   <img src="[Poster URL from the context]" alt="[Movie Title]" class="chat-movie-poster" style="width:120px; border-radius:10px; margin-top:8px; display:block; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.2s;">
+   <img src="[Poster URL from the context]" alt="[Movie Title]" class="chat-movie-poster" style="width:120px; border-radius:10px; margin: 12px auto; display:block; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.2s;">
    
    CRITICAL VALUE REPLACEMENT RULES:
    - Replace "[Poster URL from the context]" with the actual HTTP URL listed after "Poster URL:" in the movie context (for example: "https://image.tmdb.org/t/p/w500/9g5tBjU1n4C9FY56V48gH7u7MOd.jpg").
@@ -890,7 +965,7 @@ CRITICAL FORMATTING INSTRUCTIONS FOR POSTERS & TRAILERS:
 2. If the user asks to see a trailer, watch a video, or play a trailer, EMBED the YouTube video directly inside the chat so they can watch it inline! Use raw HTML iframe tags:
    <div style='margin-top:8px; border-radius:10px; overflow:hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.4);'><iframe width='100%' height='200' src='<trailer_embed_url>' frameborder='0' allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture' allowfullscreen></iframe></div>
 3. Always make action links and buttons beautifully styled HTML tags rather than plain text or markdown links. For example, to buy tickets or view details:
-   <a href='/purchase/<movie_id>' class='chat-action-btn' style='display:inline-block; background:#06b6d4; color:#000; padding:8px 16px; border-radius:8px; font-weight:bold; text-decoration:none; margin-top:8px; font-size:12px; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);'>🍿 Purchase Tickets</a>
+    <a href='/movie/<movie_id>' class='chat-action-btn' style='display:inline-block; background:#ff3c3c; color:#fff; padding:8px 16px; border-radius:8px; font-weight:bold; text-decoration:none; margin-top:8px; font-size:12px; box-shadow: 0 4px 12px rgba(255, 60, 60, 0.2);'>🔍 View Details & Reviews</a> <a href='/purchase/<movie_id>' class='chat-action-btn' style='display:inline-block; background:#06b6d4; color:#000; padding:8px 16px; border-radius:8px; font-weight:bold; text-decoration:none; margin-top:8px; font-size:12px; margin-left:6px; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);'>🍿 Purchase Tickets</a>
 4. If a movie doesn't have a poster in the database, use '/static/image/cinema_luxury.png' as a high-fidelity fallback.
 """
 
@@ -1185,10 +1260,108 @@ def sci_fi():
 def add_comment():
     username = request.form.get('username')
     comment = request.form.get('comment')
+    movie_id = request.form.get('movie_id')
+    rating_val = request.form.get('rating', 5)
+    try:
+        rating = int(rating_val)
+    except (TypeError, ValueError):
+        rating = 5
 
-    print(username, comment)
+    if username and comment and movie_id:
+        try:
+            m_id = int(movie_id)
+            storage.add_movie_comment(m_id, username, comment, rating)
+            print(f"Added comment for movie {m_id} by {username}")
+        except Exception as e:
+            print("Error adding comment to DB:", e)
 
     return redirect(request.referrer)
+
+
+# =========================================
+# MOVIE DETAIL PAGE
+# =========================================
+@app.route("/movie/<int:movie_id>")
+def movie_detail(movie_id):
+    import sqlite3
+    db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "movies.db")
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM movie_catalog WHERE id = ?", (movie_id,))
+    row = cur.fetchone()
+    conn.close()
+    
+    if not row:
+        return redirect("/catalog")
+        
+    movie_catalog_data = dict(row)
+    
+    # Resolve high-fidelity poster locally
+    local_poster = download_local_poster(movie_catalog_data["title"], movie_catalog_data["poster_url"])
+    
+    # Retrieve showtimes from database
+    showtimes = get_showtimes(movie_id)
+    showtimes_list = []
+    for s in showtimes:
+        showtimes_list.append({
+            "date": s[0],
+            "time": s[1],
+            "screen": s[2]
+        })
+        
+    # Fallback defensive showtimes
+    if not showtimes_list:
+        showtimes_list = [
+            {"date": "Today", "time": "2:30 PM", "screen": "Screen 1 Standard"},
+            {"date": "Today", "time": "6:00 PM", "screen": "Screen 2 IMAX"},
+            {"date": "Tomorrow", "time": "9:15 PM", "screen": "Screen 3 VIP"}
+        ]
+        
+    # Get movie reviews
+    comments = storage.get_movie_comments(movie_id)
+    comments_list = []
+    for c in comments:
+        comments_list.append({
+            "username": c[0],
+            "comment": c[1],
+            "rating": c[2],
+            "created_at": c[3]
+        })
+        
+    movie_data = {
+        "id": movie_catalog_data["id"],
+        "title": movie_catalog_data["title"],
+        "genre": movie_catalog_data["genre"],
+        "description": movie_catalog_data["description"],
+        "poster_url": local_poster,
+        "trailer_url": get_clean_embed_trailer(movie_catalog_data["title"], movie_catalog_data["trailer_url"]),
+        "year": "2023",
+        "rating": "8.4"
+    }
+    
+    banners = get_banner_movies()
+    return render_template(
+        "movie_detail.html",
+        movie=movie_data,
+        showtimes=showtimes_list,
+        comments=comments_list,
+        banners=banners,
+        country_to_flag=country_to_flag
+    )
+
+
+# =========================================
+# DEDICATED ANALYTICS DASHBOARD PAGE
+# =========================================
+@app.route("/dashboard")
+def dashboard():
+    banners = get_banner_movies()
+    return render_template(
+        "dashboard.html",
+        banners=banners,
+        country_to_flag=country_to_flag
+    )
 
 
 

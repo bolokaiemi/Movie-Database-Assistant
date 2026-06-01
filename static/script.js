@@ -104,8 +104,22 @@ if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
         sendMessage();
     };
 
-    recognition.onerror = function () {
-        addMessage("🎤 Voice error", "bot");
+    recognition.onerror = function (e) {
+        let message = "🎤 Voice error";
+        if (e && e.error) {
+            if (e.error === "not-allowed") {
+                message = "🎤 Microphone permission denied. Please allow microphone access in your browser settings.";
+            } else if (e.error === "no-speech") {
+                message = "🎤 No speech detected. Please speak clearly into your microphone.";
+            } else if (e.error === "network") {
+                message = "🎤 Network error. Speech recognition requires an active internet connection.";
+            } else if (e.error === "audio-capture") {
+                message = "🎤 No microphone detected. Please check your recording device.";
+            } else {
+                message = `🎤 Voice error: ${e.error}`;
+            }
+        }
+        addMessage(message, "bot");
     };
 }
 

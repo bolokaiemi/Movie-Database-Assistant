@@ -36,31 +36,36 @@ st.markdown("""
     
     /* Metrics panel cards */
     div.stMetric {
-        background: rgba(30, 41, 59, 0.45);
-        border: 1px solid rgba(255, 60, 60, 0.15);
-        border-radius: 12px;
-        padding: 16px 20px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        background: rgba(30, 41, 59, 0.55);
+        border: 1px solid rgba(255, 60, 60, 0.25);
+        border-radius: 16px;
+        padding: 24px 28px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
         transition: transform 0.2s ease, border-color 0.2s ease;
     }
     div.stMetric:hover {
-        transform: translateY(-2px);
-        border-color: rgba(255, 60, 60, 0.4);
+        transform: translateY(-3px);
+        border-color: rgba(255, 60, 60, 0.5);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
     }
     
     /* Metric typography overrides */
     div[data-testid="stMetricValue"] {
         color: #ff3c3c !important;
-        font-weight: 700 !important;
-        font-size: 2rem !important;
-        text-shadow: 0 0 10px rgba(255, 60, 60, 0.2);
+        font-weight: 800 !important;
+        font-size: 2.85rem !important;
+        text-shadow: 0 0 12px rgba(255, 60, 60, 0.3);
     }
     div[data-testid="stMetricLabel"] {
-        color: #94a3b8 !important;
-        font-weight: 500 !important;
+        color: #e2e8f0 !important;
+        font-weight: 700 !important;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
-        font-size: 0.85rem !important;
+        letter-spacing: 0.08em;
+        font-size: 1.15rem !important;
+    }
+    div[data-testid="stMetricDelta"] {
+        font-size: 1.15rem !important;
+        font-weight: 600 !important;
     }
     
     /* Tabs customization */
@@ -376,11 +381,11 @@ def render_realtime_dashboard(selected_date_range, selected_movie):
     
     # Auto refresh status badge
     st.markdown("""
-        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); padding: 8px 16px; border-radius: 8px; margin-bottom: 25px;">
-            <span style="color: #10b981; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); padding: 14px 24px; border-radius: 12px; margin-bottom: 30px;">
+            <span style="color: #10b981; font-weight: 700; font-size: 1.25rem; display: flex; align-items: center; gap: 8px;">
                 🟢 Live Auto-Sync Active &bull; Refreshing every 5 seconds
             </span>
-            <span style="color: #94a3b8; font-size: 0.8rem; font-family: monospace;">
+            <span style="color: #cbd5e1; font-size: 1.05rem; font-weight: 500; font-family: monospace;">
                 Last checked: {}
             </span>
         </div>

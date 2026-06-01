@@ -286,8 +286,21 @@ function addMessage(text, sender) {
                 e.error
             );
 
+            let message = "🎤 Voice recognition failed.";
+            if (e.error === "not-allowed") {
+                message = "🎤 Microphone permission denied. Please click the camera/mic icon in the browser address bar and allow microphone access.";
+            } else if (e.error === "no-speech") {
+                message = "🎤 No speech detected. Please try again and speak clearly into your microphone.";
+            } else if (e.error === "network") {
+                message = "🎤 Network connection error. Speech recognition requires an active internet connection on Chrome.";
+            } else if (e.error === "audio-capture") {
+                message = "🎤 No recording device detected. Please plug in a microphone.";
+            } else {
+                message = `🎤 Voice recognition error (${e.error}). Please try again.`;
+            }
+
             addMessage(
-                "🎤 Voice recognition failed.",
+                message,
                 "bot"
             );
         };
@@ -451,40 +464,25 @@ function addMessage(text, sender) {
 // =========================
 
 window.login = function () {
+    const userEl = document.getElementById("username");
+    const passEl = document.getElementById("password");
+    if (!userEl || !passEl) return;
 
-    const user =
-        document.getElementById(
-            "username"
-        ).value;
+    const user = userEl.value;
+    const pass = passEl.value;
 
-    const pass =
-        document.getElementById(
-            "password"
-        ).value;
-
-    // =========================
-    // CLASSMATE LOGIN
-    // =========================
-
-    if (
-        user === "student" &&
-        pass === "cinema123"
-    ) {
-
+    if (user === "student" && pass === "cinema123") {
         // Hide login
-        document.getElementById(
-            "loginSection"
-        ).style.display = "none";
+        const loginEl = document.getElementById("loginSection");
+        if (loginEl) loginEl.style.display = "none";
 
         // Show feedback form
-        document.getElementById(
-            "feedbackSection"
-        ).style.display = "block";
+        const feedbackEl = document.getElementById("feedbackSection");
+        if (feedbackEl) feedbackEl.style.display = "block";
 
         // Show logout button
-        document.getElementById(
-            "logoutContainer"
-        ).style.display = "block";
+        const logoutEl = document.getElementById("logoutContainer");
+        if (logoutEl) logoutEl.style.display = "block";
 
         // Toggle Analytics Dashboard Containers
         const lockedContainer = document.getElementById("analyticsLockedContainer");
@@ -493,21 +491,10 @@ window.login = function () {
         if (dashboardContainer) dashboardContainer.style.display = "block";
 
         // Save login state
-        localStorage.setItem(
-            "cinemaLoggedIn",
-            "true"
-        );
-
-        localStorage.setItem(
-            "cinemaUser",
-            user
-        );
-
+        localStorage.setItem("cinemaLoggedIn", "true");
+        localStorage.setItem("cinemaUser", user);
     } else {
-
-        alert(
-            "Invalid login"
-        );
+        alert("Invalid login");
     }
 };
 
@@ -516,30 +503,21 @@ window.login = function () {
 // =========================
 
 window.logout = function () {
-
     // Remove login state
-    localStorage.removeItem(
-        "cinemaLoggedIn"
-    );
-
-    localStorage.removeItem(
-        "cinemaUser"
-    );
+    localStorage.removeItem("cinemaLoggedIn");
+    localStorage.removeItem("cinemaUser");
 
     // Show login
-    document.getElementById(
-        "loginSection"
-    ).style.display = "block";
+    const loginEl = document.getElementById("loginSection");
+    if (loginEl) loginEl.style.display = "block";
 
     // Hide feedback
-    document.getElementById(
-        "feedbackSection"
-    ).style.display = "none";
+    const feedbackEl = document.getElementById("feedbackSection");
+    if (feedbackEl) feedbackEl.style.display = "none";
 
     // Hide logout button
-    document.getElementById(
-        "logoutContainer"
-    ).style.display = "none";
+    const logoutEl = document.getElementById("logoutContainer");
+    if (logoutEl) logoutEl.style.display = "none";
 
     // Toggle Analytics Dashboard Containers
     const lockedContainer = document.getElementById("analyticsLockedContainer");
@@ -601,25 +579,17 @@ window.focusLogin = function () {
 window.addEventListener(
     "load",
     () => {
-
-    const loggedIn =
-        localStorage.getItem(
-            "cinemaLoggedIn"
-        );
+    const loggedIn = localStorage.getItem("cinemaLoggedIn");
 
     if (loggedIn === "true") {
+        const loginEl = document.getElementById("loginSection");
+        if (loginEl) loginEl.style.display = "none";
 
-        document.getElementById(
-            "loginSection"
-        ).style.display = "none";
+        const feedbackEl = document.getElementById("feedbackSection");
+        if (feedbackEl) feedbackEl.style.display = "block";
 
-        document.getElementById(
-            "feedbackSection"
-        ).style.display = "block";
-
-        document.getElementById(
-            "logoutContainer"
-        ).style.display = "block";
+        const logoutEl = document.getElementById("logoutContainer");
+        if (logoutEl) logoutEl.style.display = "block";
 
         // Toggle Analytics Dashboard Containers
         const lockedContainer = document.getElementById("analyticsLockedContainer");
