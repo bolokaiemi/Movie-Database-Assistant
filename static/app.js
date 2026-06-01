@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let isVoiceInput = false;
 
     // =========================
-    // TOGGLE CHAT
+    // TOGGLE CHAT (SMOOTH POP-UP)
     // =========================
 
     window.toggleChat = function () {
@@ -26,16 +26,31 @@ document.addEventListener("DOMContentLoaded", function () {
         const popup =
             document.getElementById("popup");
 
-        popup.style.display =
-            popup.style.display === "flex"
-            ? "none"
-            : "flex";
+        if (popup) {
+            popup.classList.toggle("show");
+        }
     };
 
-   window.closePopup = function () {
-    const popup = document.getElementById("popup");
-    popup.style.display = "none";
-};
+    window.closePopup = function () {
+        const popup = document.getElementById("popup");
+        if (popup) {
+            popup.classList.remove("show");
+        }
+    };
+
+    // =========================
+    // AUTO POPUP ON SCROLL
+    // =========================
+    let chatOpenedByScroll = false;
+    window.addEventListener("scroll", function () {
+        if (!chatOpenedByScroll && window.scrollY > 300) {
+            const popup = document.getElementById("popup");
+            if (popup && !popup.classList.contains("show")) {
+                popup.classList.add("show");
+                chatOpenedByScroll = true;
+            }
+        }
+    });
 
     // =========================
 // ADD MESSAGE
@@ -788,121 +803,201 @@ document.querySelectorAll(".icon-btn").forEach(btn => {
 
 (() => {
 
-  const languageDropdown =
-    document.getElementById("languageDropdown");
-
-  if (!languageDropdown) return;
+  const mainLanguageDropdown = document.getElementById("mainLanguageDropdown");
+  const languageDropdown = document.getElementById("languageDropdown");
 
   // ===== TRANSLATIONS =====
 
-  const mcTranslations = {
-
+  const pageTranslations = {
     en: {
-      placeholder: "Blade Runner 2049...",
+      brand: "🎬 MovieMania",
+      cinema_portal: "🍿 Cinema Portal",
+      analytics: "📊 Analytics",
+      genres: "Genres ▼",
+      home: "Home",
+      movie_list: "Movie-List",
+      trending: "Trending",
+      series: "Series",
+      dashboard: "📊 Dashboard",
+      recommend: "Recommend",
+      action: "Action",
+      comedy: "Comedy",
+      horror: "Horror",
+      sci_fi: "Sci-Fi",
+      welcome_title: "Welcome",
+      welcome_subtitle: "Millions of movies, cinema showtimes, and people to discover. Explore now!",
+      search_btn: "Search",
+      search_placeholder: "🔍 Search movies...",
+      
+      // Chatbot specific elements
       title: "🎬 CinemaBot",
       tagline: "Your personal movie assistant",
       welcome: "🎬 Welcome to CinemaBot!",
-      recommendations: "Ask me for movie recommendations..."
+      recommendations: "Ask me for movie recommendations...",
+      placeholder: "Ask something..."
     },
-
     es: {
-      placeholder: "Blade Runner 2049...",
+      brand: "🎬 MovieMania",
+      cinema_portal: "🍿 Portal de Cine",
+      analytics: "📊 Análisis",
+      genres: "Géneros ▼",
+      home: "Inicio",
+      movie_list: "Lista de Pelis",
+      trending: "Tendencias",
+      series: "Series",
+      dashboard: "📊 Tablero",
+      recommend: "Recomendado",
+      action: "Acción",
+      comedy: "Comedia",
+      horror: "Terror",
+      sci_fi: "Ciencia Ficción",
+      welcome_title: "Bienvenido",
+      welcome_subtitle: "Millones de películas, horarios de cine y personas por descubrir. ¡Explora ahora!",
+      search_btn: "Buscar",
+      search_placeholder: "🔍 Buscar películas...",
+      
+      // Chatbot specific elements
       title: "🎬 CinemaBot",
       tagline: "Tu asistente personal de películas",
       welcome: "🎬 ¡Bienvenido a CinemaBot!",
-      recommendations: "Pregúntame por recomendaciones de películas..."
+      recommendations: "Pregúntame por recomendaciones de películas...",
+      placeholder: "Pregunta algo..."
     },
-
     fr: {
-      placeholder: "Blade Runner 2049...",
+      brand: "🎬 MovieMania",
+      cinema_portal: "🍿 Portail Cinéma",
+      analytics: "📊 Analyses",
+      genres: "Genres ▼",
+      home: "Accueil",
+      movie_list: "Liste de Films",
+      trending: "Tendances",
+      series: "Séries",
+      dashboard: "📊 Tableau de bord",
+      recommend: "Recommander",
+      action: "Action",
+      comedy: "Comédie",
+      horror: "Horreur",
+      sci_fi: "Sci-Fi",
+      welcome_title: "Bienvenue",
+      welcome_subtitle: "Des millions de films, de séances de cinéma et de personnes à découvrir. Explorez maintenant !",
+      search_btn: "Rechercher",
+      search_placeholder: "🔍 Rechercher des films...",
+      
+      // Chatbot specific elements
       title: "🎬 CinemaBot",
       tagline: "Votre assistant cinéma personnel",
       welcome: "🎬 Bienvenue sur CinemaBot !",
-      recommendations: "Demandez-moi des recommandations de films..."
+      recommendations: "Demandez-moi des recommandations de films...",
+      placeholder: "Demander quelque chose..."
     },
-
     de: {
-      placeholder: "Blade Runner 2049...",
+      brand: "🎬 MovieMania",
+      cinema_portal: "🍿 Kino-Portal",
+      analytics: "📊 Analysen",
+      genres: "Genres ▼",
+      home: "Startseite",
+      movie_list: "Filmliste",
+      trending: "Trends",
+      series: "Serien",
+      dashboard: "📊 Dashboard",
+      recommend: "Empfehlen",
+      action: "Action",
+      comedy: "Komödie",
+      horror: "Horror",
+      sci_fi: "Sci-Fi",
+      welcome_title: "Willkommen",
+      welcome_subtitle: "Millionen von Filmen, Kinoprogrammen und Menschen zu entdecken. Jetzt erkunden!",
+      search_btn: "Suchen",
+      search_placeholder: "🔍 Filme suchen...",
+      
+      // Chatbot specific elements
       title: "🎬 CinemaBot",
       tagline: "Ihr persönlicher Filmassistent",
       welcome: "🎬 Willkommen bei CinemaBot!",
-      recommendations: "Fragen Sie mich nach Filmempfehlungen..."
+      recommendations: "Fragen Sie mich nach Filmempfehlungen...",
+      placeholder: "Frage etwas..."
     }
   };
 
   // ===== APPLY LANGUAGE =====
 
   function applyLanguage(language) {
-
-    const translations =
-      mcTranslations[language];
-
+    const translations = pageTranslations[language];
     if (!translations) return;
 
-    // ===== INPUT PLACEHOLDER =====
+    // 1. Update text elements labeled with [data-translate]
+    document.querySelectorAll("[data-translate]").forEach((element) => {
+      const key = element.getAttribute("data-translate");
+      if (translations[key]) {
+        element.textContent = translations[key];
+      }
+    });
 
-    const userInput =
-      document.getElementById("input");
+    // 2. Update text elements labeled with legacy [data-mc-text] for backward compatibility
+    document.querySelectorAll("[data-mc-text]").forEach((element) => {
+      const key = element.getAttribute("data-mc-text");
+      if (translations[key]) {
+        element.textContent = translations[key];
+      }
+    });
 
-    if (userInput) {
-      userInput.placeholder =
-        translations.placeholder;
+    // 3. Update input placeholders labeled with [data-translate-placeholder]
+    document.querySelectorAll("[data-translate-placeholder]").forEach((element) => {
+      const key = element.getAttribute("data-translate-placeholder");
+      if (translations[key]) {
+        element.placeholder = translations[key];
+      }
+    });
+
+    // 4. Update the chatbot input placeholder legacy style
+    const chatbotInput = document.getElementById("input");
+    if (chatbotInput && translations.placeholder) {
+      chatbotInput.placeholder = translations.placeholder;
     }
 
-    // ===== UPDATE TEXT ELEMENTS =====
+    // 5. Keep dropdown selectors synchronized
+    if (mainLanguageDropdown) mainLanguageDropdown.value = language;
+    if (languageDropdown) languageDropdown.value = language;
 
-    document
-      .querySelectorAll("[data-mc-text]")
-      .forEach((element) => {
-
-        const key =
-          element.getAttribute("data-mc-text");
-
-        if (translations[key]) {
-          element.textContent =
-            translations[key];
-        }
-
-      });
-
-    // Save language
-    localStorage.setItem(
-      "mcChatbotLanguage",
-      language
-    );
-
+    // 6. Save language selection to localStorage
+    localStorage.setItem("mcChatbotLanguage", language);
   }
 
-  // ===== DROPDOWN CHANGE =====
+  // ===== BIND EVENTS ON SELECT CHANGE =====
 
-  languageDropdown.addEventListener(
-    "change",
-    (event) => {
+  if (mainLanguageDropdown) {
+    mainLanguageDropdown.addEventListener("change", (e) => {
+      applyLanguage(e.target.value);
+    });
+  }
 
-      const selectedLanguage =
-        event.target.value;
+  if (languageDropdown) {
+    languageDropdown.addEventListener("change", (e) => {
+      applyLanguage(e.target.value);
+    });
+  }
 
-      console.log(
-        "[MovieChatbot] Language:",
-        selectedLanguage
-      );
+  // ===== AUTOMATIC COUNTRY-BASED OR LOCALSTORAGE LOAD =====
+  
+  let currentLanguage = localStorage.getItem("mcChatbotLanguage");
 
-      applyLanguage(selectedLanguage);
-
+  if (!currentLanguage) {
+    // Determine browser country/language settings automatically
+    const browserLang = (navigator.language || navigator.userLanguage || "en").toLowerCase();
+    if (browserLang.startsWith("es")) {
+      currentLanguage = "es";
+    } else if (browserLang.startsWith("fr")) {
+      currentLanguage = "fr";
+    } else if (browserLang.startsWith("de")) {
+      currentLanguage = "de";
+    } else {
+      currentLanguage = "en"; // Default fallback
     }
-  );
+    console.log("[Language Detector] Automatically set language to:", currentLanguage);
+  }
 
-  // ===== LOAD SAVED LANGUAGE =====
-
-  const savedLanguage =
-    localStorage.getItem(
-      "mcChatbotLanguage"
-    ) || "en";
-
-  languageDropdown.value =
-    savedLanguage;
-
-  applyLanguage(savedLanguage);
+  // Apply resolved language initial state
+  applyLanguage(currentLanguage);
 
 })();
 

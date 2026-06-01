@@ -224,20 +224,24 @@ def download_local_poster(title, original_url):
     if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
         return local_url
         
-    # Download the image from the internet in the background python process
+    # Download the image from the internet in a background thread so we never block!
     if original_url and original_url.startswith("http"):
-        try:
-            # Set a standard User-Agent to bypass download scrapers
-            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-            res = requests.get(original_url, headers=headers, timeout=5)
-            if res.status_code == 200:
-                os.makedirs(poster_dir, exist_ok=True)
-                with open(filepath, "wb") as f:
-                    f.write(res.content)
-                print(f"Downloaded local poster for: {title}")
-                return local_url
-        except Exception as e:
-            print(f"Error downloading poster for {title}:", e)
+        import threading
+        
+        def download_worker(url, path, p_dir, t_name):
+            try:
+                headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+                res = requests.get(url, headers=headers, timeout=5)
+                if res.status_code == 200:
+                    os.makedirs(p_dir, exist_ok=True)
+                    with open(path, "wb") as f:
+                        f.write(res.content)
+                    print(f"Downloaded local poster asynchronously for: {t_name}")
+            except Exception as ex:
+                print(f"Async poster download error for {t_name}: {ex}")
+
+        threading.Thread(target=download_worker, args=(original_url, filepath, poster_dir, title), daemon=True).start()
+        return local_url
             
     # If download fails or is blocked by school firewall, use a beautiful local placeholder consistently!
     placeholders = [
@@ -751,6 +755,8 @@ def get_chatbot_movie_context():
         return "Movie database is currently empty."
 
 
+TRAILER_CACHE = {}
+
 def get_clean_embed_trailer(title, default_url):
     """
     Tries to fetch the official working YouTube trailer key from TMDB.
@@ -758,6 +764,11 @@ def get_clean_embed_trailer(title, default_url):
     Guarantees the output is ALWAYS formatted as a clean YouTube embed URL
     (e.g., https://www.youtube.com/embed/<key>), never a standard watch link.
     """
+    global TRAILER_CACHE
+    cache_key = (title, default_url)
+    if cache_key in TRAILER_CACHE:
+        return TRAILER_CACHE[cache_key]
+
     import requests
     import urllib.parse
     
@@ -797,7 +808,18 @@ def get_clean_embed_trailer(title, default_url):
             
         return None
 
-    # Try fetching from TMDB first
+    # Performance Boost: Parse default_url locally and return instantly to bypass network delay!
+    if default_url:
+        key = extract_yt_key(default_url)
+        if key:
+            result = f"https://www.youtube.com/embed/{key}"
+            TRAILER_CACHE[cache_key] = result
+            return result
+        if "http" in default_url:
+            TRAILER_CACHE[cache_key] = default_url
+            return default_url
+
+    # Try fetching from TMDB if database didn't have a valid YouTube link
     try:
         api_key = os.getenv("TMDB_API_KEY")
         if api_key:
@@ -810,20 +832,16 @@ def get_clean_embed_trailer(title, default_url):
                 video_res = requests.get(video_url, timeout=4).json()
                 for v in video_res.get("results", []):
                     if v.get("site") == "YouTube" and v.get("type") == "Trailer" and v.get("key"):
-                        return f"https://www.youtube.com/embed/{v['key']}"
+                        result = f"https://www.youtube.com/embed/{v['key']}"
+                        TRAILER_CACHE[cache_key] = result
+                        return result
     except Exception as e:
         print(f"Error fetching TMDB trailer for {title}:", e)
 
-    # Fallback to database default_url
-    if default_url:
-        key = extract_yt_key(default_url)
-        if key:
-            return f"https://www.youtube.com/embed/{key}"
-        if "http" in default_url:
-            return default_url
-
     # Defensive default
-    return "https://www.youtube.com/embed/YoHD9XEInc0"
+    result = "https://www.youtube.com/embed/YoHD9XEInc0"
+    TRAILER_CACHE[cache_key] = result
+    return result
 
 
 def post_process_chat_reply(reply, user_message):

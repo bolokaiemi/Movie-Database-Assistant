@@ -562,7 +562,7 @@ margin-top: 40px;
     position:fixed;
 
     right:25px;
-    bottom: 30px;
+    bottom: 3px;
 
     width:45px;
     height:45px;
@@ -580,12 +580,14 @@ margin-top: 40px;
 
 .chat-popup{
 
-    display: none;
+    display: flex;
     flex-direction: column;
 
-    margin-bottom: 50px;
+    margin-bottom: 20px;
+    margin-top: -20px;
 
     padding-top: 10px;
+
 
     position: fixed;
 
@@ -603,6 +605,20 @@ margin-top: 40px;
 
     border:1px solid var(--border);
     z-index: 1000;
+
+    /* Sleek Modern Fade/Slide Transitions */
+    opacity: 0;
+    transform: translateY(30px) scale(0.98);
+    pointer-events: none;
+    visibility: hidden;
+    transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s ease;
+}
+
+.chat-popup.show{
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+    visibility: visible;
 }
 .chat-popup button{
   display: flex;
