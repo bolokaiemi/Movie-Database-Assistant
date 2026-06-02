@@ -580,10 +580,15 @@ window.submitFeedback =
 // FOCUS ADMIN LOGIN INPUT
 // =========================
 window.focusLogin = function () {
+    if (typeof openLoginModal === 'function') {
+        openLoginModal();
+    } else {
+        const modal = document.getElementById('loginModal');
+        if (modal) modal.style.display = 'flex';
+    }
     const usernameEl = document.getElementById("username");
     if (usernameEl) {
         usernameEl.focus();
-        usernameEl.scrollIntoView({ behavior: "smooth", block: "center" });
     }
 };
 

@@ -309,15 +309,18 @@
             font-size: 11px;
         }
 
-        /* Shift chatbot popup down below the MovieMania top navbar to prevent overlapping */
+        /* Shift chatbot popup down and anchor it beautifully at the bottom-right */
         .chat-popup {
             padding-top: 0 !important;
-            top: 95px !important;
-            bottom: 25px !important;
-            height: calc(100vh - 130px) !important;
-            max-height: calc(100vh - 130px) !important;
-            width: 95% !important;
-            max-width: 850px !important;
+            top: auto !important;
+            bottom: 60px !important;
+            right: 25px !important;
+            height: 520px !important;
+            max-height: calc(100vh - 120px) !important;
+            width: 380px !important;
+            max-width: 90% !important;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.6) !important;
+            border: 2px solid var(--border) !important;
         }
 
         .chat-popup .chatbot-header {
@@ -388,7 +391,7 @@
             <a href="{{ url_for('series') }}" class="nav-item" data-translate="series">Series</a>
             <a href="{{ url_for('dashboard') }}" class="nav-item" data-translate="dashboard">📊 Dashboard</a>
             <a href="/catalog" class="nav-item portal-link" data-translate="cinema_portal">🍿 Cinema Portal</a>
-            <a href="/dashboard" class="nav-item analytics-link" data-translate="analytics">📊 Analytics</a>
+            <a href="/analytics" class="nav-item analytics-link" data-translate="analytics">📊 Analytics</a>
         </div>
     </div>
 
@@ -419,9 +422,7 @@
 
         <!-- NAVBAR LOGIN -->
         <div id="loginSection" class="navbar-login" style="display: flex; align-items: center; gap: 8px;">
-            <input id="username" type="text" placeholder="Username" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; font-size: 13px; width: 100px; outline: none;">
-            <input id="password" type="password" placeholder="Password" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; font-size: 13px; width: 100px; outline: none;">
-            <button onclick="login()" style="background: var(--accent); color: black; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 13px;">Login</button>
+            <button onclick="openLoginModal()" style="background: var(--accent); color: black; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 13px;">Login</button>
         </div>
 
         <!-- LOGOUT -->
@@ -443,7 +444,7 @@
                 <a href="{{ url_for('series') }}" data-translate="series">Series</a>
                 <a href="{{ url_for('dashboard') }}" data-translate="dashboard">📊 Dashboard</a>
                 <a href="/catalog" data-translate="cinema_portal">🍿 Cinema Portal</a>
-                <a href="/dashboard" data-translate="analytics">📊 Analytics</a>
+                <a href="/analytics" data-translate="analytics">📊 Analytics</a>
             </div>
         </div>
     </div>
@@ -661,13 +662,32 @@
      7. SOCIAL MEDIA SECTION
 ========================== -->
 <div class="social-media-section" style="background: rgba(255,255,255,0.02); border-top: 1px solid var(--border); padding: 40px 20px; text-align: center;">
-    <h3 style="font-size: 16px; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); margin-bottom: 20px; font-weight: 700;">Connect With MovieMania</h3>
-    <div class="social-icons" style="display: flex; justify-content: center; gap: 20px;">
-        <a href="https://facebook.com" target="_blank" class="social-icon facebook" style="font-size: 24px; color: #1877f2; background: rgba(24, 119, 242, 0.1); width: 50px; height: 50px; display: inline-flex; justify-content: center; align-items: center; border-radius: 50%; transition: all 0.3s ease; text-decoration: none;">📘</a>
-        <a href="https://twitter.com" target="_blank" class="social-icon twitter" style="font-size: 24px; color: #1da1f2; background: rgba(29, 161, 242, 0.1); width: 50px; height: 50px; display: inline-flex; justify-content: center; align-items: center; border-radius: 50%; transition: all 0.3s ease; text-decoration: none;">🐦</a>
-        <a href="https://instagram.com" target="_blank" class="social-icon instagram" style="font-size: 24px; color: #e1306c; background: rgba(225, 48, 108, 0.1); width: 50px; height: 50px; display: inline-flex; justify-content: center; align-items: center; border-radius: 50%; transition: all 0.3s ease; text-decoration: none;">📸</a>
-        <a href="https://youtube.com" target="_blank" class="social-icon youtube" style="font-size: 24px; color: #ff0000; background: rgba(255, 0, 0, 0.1); width: 50px; height: 50px; display: inline-flex; justify-content: center; align-items: center; border-radius: 50%; transition: all 0.3s ease; text-decoration: none;">📺</a>
+    <h3 style="font-size: 18px; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); margin-bottom: 20px; font-weight: 700;">Connect With MovieMania</h3>
+    <div class="social-icons" style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 15px;">
+        <a href="https://facebook.com" target="_blank" class="social-icon facebook" title="Facebook" onclick="showSocialName(event, 'Facebook')" style="font-size: 24px; color: #1877f2; background: rgba(24, 119, 242, 0.1); width: 55px; height: 55px; display: inline-flex; justify-content: center; align-items: center; border-radius: 50%; transition: all 0.3s ease; text-decoration: none;">📘</a>
+        <a href="https://twitter.com" target="_blank" class="social-icon twitter" title="Twitter / X" onclick="showSocialName(event, 'Twitter / X')" style="font-size: 24px; color: #1da1f2; background: rgba(29, 161, 242, 0.1); width: 55px; height: 55px; display: inline-flex; justify-content: center; align-items: center; border-radius: 50%; transition: all 0.3s ease; text-decoration: none;">🐦</a>
+        <a href="https://instagram.com" target="_blank" class="social-icon instagram" title="Instagram" onclick="showSocialName(event, 'Instagram')" style="font-size: 24px; color: #e1306c; background: rgba(225, 48, 108, 0.1); width: 55px; height: 55px; display: inline-flex; justify-content: center; align-items: center; border-radius: 50%; transition: all 0.3s ease; text-decoration: none;">📸</a>
+        <a href="https://youtube.com" target="_blank" class="social-icon youtube" title="YouTube" onclick="showSocialName(event, 'YouTube')" style="font-size: 24px; color: #ff0000; background: rgba(255, 0, 0, 0.1); width: 55px; height: 55px; display: inline-flex; justify-content: center; align-items: center; border-radius: 50%; transition: all 0.3s ease; text-decoration: none;">📺</a>
+        <a href="https://linkedin.com" target="_blank" class="social-icon linkedin" title="LinkedIn" onclick="showSocialName(event, 'LinkedIn')" style="font-size: 24px; color: #0a66c2; background: rgba(10, 102, 194, 0.1); width: 55px; height: 55px; display: inline-flex; justify-content: center; align-items: center; border-radius: 50%; transition: all 0.3s ease; text-decoration: none;">💼</a>
     </div>
+    <!-- Dynamic status text display on click -->
+    <div id="social-media-display" style="font-size: 16px; font-weight: 700; color: #38bdf8; height: 24px; transition: all 0.3s ease; opacity: 0; margin-top: 15px;"></div>
+    
+    <script>
+        function showSocialName(event, name) {
+            const display = document.getElementById('social-media-display');
+            if (display) {
+                display.innerText = "Connecting to " + name + "... 🚀";
+                display.style.opacity = "1";
+                if (window.socialTimeout) {
+                    clearTimeout(window.socialTimeout);
+                }
+                window.socialTimeout = setTimeout(() => {
+                    display.style.opacity = "0";
+                }, 4000);
+            }
+        }
+    </script>
 </div>
 
 
@@ -736,6 +756,70 @@
     <script src="{{ url_for('static', filename='home.js') }}?v=2.0"></script>
     <script src="{{ url_for('static', filename='genre.js') }}?v=2.0"></script>
     <script src="{{ url_for('static', filename='comment-section.js') }}?v=2.0"></script>
+
+    <!-- BEAUTIFUL PREMIUM LOGIN MODAL -->
+    <div id="loginModal" class="login-modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 10000; justify-content: center; align-items: center;">
+        <div class="login-modal-card" style="background: #0f172a; border: 2px solid var(--accent); border-radius: 20px; padding: 40px; width: 90%; max-width: 400px; box-shadow: 0 15px 50px rgba(0, 0, 0, 0.8); position: relative; text-align: center; color: white; animation: modalSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
+            <button onclick="closeLoginModal()" style="position: absolute; top: 15px; right: 18px; background: none; border: none; color: #94a3b8; font-size: 28px; cursor: pointer; transition: 0.2s; font-weight: 300;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#94a3b8'">×</button>
+            
+            <h2 style="font-size: 26px; font-weight: 800; color: white; margin-bottom: 5px; margin-top: 10px;">🎬 Admin Login</h2>
+            <p style="color: #94a3b8; font-size: 13.5px; margin-bottom: 25px;">Enter credentials to access the analytics portal.</p>
+            
+            <div style="text-align: left; margin-bottom: 20px;">
+                <label style="display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; letter-spacing: 1.5px;">Username</label>
+                <input id="username" type="text" placeholder="student" style="width: 100%; background: rgba(255, 255, 255, 0.05); color: white; border: 1px solid rgba(255,255,255,0.12); padding: 12px 16px; border-radius: 10px; font-size: 15px; outline: none; transition: 0.3s; box-sizing: border-box;" onfocus="this.style.borderColor='var(--accent)'">
+            </div>
+            
+            <div style="text-align: left; margin-bottom: 30px;">
+                <label style="display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; letter-spacing: 1.5px;">Password</label>
+                <input id="password" type="password" placeholder="••••••••" style="width: 100%; background: rgba(255, 255, 255, 0.05); color: white; border: 1px solid rgba(255,255,255,0.12); padding: 12px 16px; border-radius: 10px; font-size: 15px; outline: none; transition: 0.3s; box-sizing: border-box;" onkeydown="if(event.key === 'Enter') submitModalLogin()" onfocus="this.style.borderColor='var(--accent)'">
+            </div>
+            
+            <button onclick="submitModalLogin()" style="width: 100%; background: var(--accent); color: black; border: none; padding: 14px; border-radius: 10px; font-weight: 800; font-size: 15px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(34, 211, 238, 0.25);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">Sign In</button>
+            
+            <p style="color: #64748b; font-size: 12px; margin-top: 25px; line-height: 1.5;">Hint: Use Username <code style="color: white; background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px;">student</code> and Password <code style="color: white; background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px;">cinema123</code></p>
+        </div>
+    </div>
+
+    <style>
+        @keyframes modalSlideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+
+    <script>
+        function openLoginModal() {
+            const modal = document.getElementById('loginModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                const userField = document.getElementById('username');
+                if (userField) userField.focus();
+            }
+        }
+        function closeLoginModal() {
+            const modal = document.getElementById('loginModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+        function submitModalLogin() {
+            if (typeof login === 'function') {
+                login();
+                if (localStorage.getItem("cinemaLoggedIn") === "true") {
+                    closeLoginModal();
+                }
+            }
+        }
+        
+        // Let the modal close when clicking outside the card
+        window.addEventListener('click', function(e) {
+            const modal = document.getElementById('loginModal');
+            if (e.target === modal) {
+                closeLoginModal();
+            }
+        });
+    </script>
 
 </body>
 </html>

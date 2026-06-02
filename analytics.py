@@ -21,54 +21,109 @@ st.set_page_config(
 st.markdown("""
 <style>
     /* Primary brand colors and font sizes */
-    
     html, body, .stApp {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         background-color: #0c0f17 !important;
-        color: #e2e8f0 !important;
+        color: #cbd5e1 !important;
     }
     
-    /* Sidebar styling */
-    [data-testid="stSidebar"] {
-        background-color: #090c12 !important;
-        border-right: 1px solid #1e293b;
+    /* 1. SIDEBAR HIGH-CONTRAST LABELS & TEXTS (DARK TEXT ON LIGHT BACKGROUND) */
+    /* Forces every label, description, and widget label inside the sidebar to be highly legible dark slate */
+    section[data-testid="stSidebar"] div[data-testid="stWidgetLabel"] p,
+    section[data-testid="stSidebar"] label,
+    section[data-testid="stSidebar"] label *,
+    section[data-testid="stSidebar"] .stMarkdown p,
+    section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] {
+        color: #0f172a !important; /* Rich dark slate for high contrast on light backgrounds */
+        font-weight: 700 !important; /* Bold */
+        font-size: 1.05rem !important;
     }
     
-    /* Metrics panel cards */
+    /* 2. SELECTBOX WIDGET STYLING (DARK SLATE TEXT ON LIGHT BACKGROUND) */
+    /* Force selectbox input containers to use rich dark slate text */
+    section[data-testid="stSidebar"] div[data-baseweb="select"] *,
+    section[data-testid="stSidebar"] div[data-baseweb="select"] div,
+    section[data-testid="stSidebar"] div[data-baseweb="select"] span {
+        color: #0f172a !important; /* Force dark slate text */
+    }
+    
+    /* Force dropdown menu popover options to also use rich dark slate text */
+    div[role="listbox"] *,
+    div[data-baseweb="popover"] *,
+    div[data-baseweb="menu"] *,
+    ul[role="listbox"] * {
+        color: #0f172a !important; /* Force all list choices to be dark slate */
+    }
+    
+    /* 3. SIDEBAR BUTTON STYLING (THEME-RED SYNC BUTTON WITH BOLD WHITE TEXT) */
+    section[data-testid="stSidebar"] button {
+        background-color: #ff3c3c !important; /* Bright red matching the theme */
+        color: #ffffff !important; /* Pure white bold text for excellent contrast on red */
+        border: none !important;
+        border-radius: 8px !important;
+        padding: 10px 20px !important;
+        font-weight: 700 !important;
+        width: 100% !important;
+        box-shadow: 0 4px 15px rgba(255, 60, 60, 0.25) !important;
+        transition: transform 0.2s ease, background-color 0.2s ease !important;
+    }
+    section[data-testid="stSidebar"] button:hover {
+        background-color: #ff5555 !important;
+        transform: translateY(-2px) !important;
+    }
+    
+    /* 2. METRIC CARD READABILITY OVERRIDES */
     div.stMetric {
-        background: rgba(30, 41, 59, 0.55);
-        border: 1px solid rgba(255, 60, 60, 0.25);
+        background: #151e2e !important;
+        border: 2px solid #334155 !important;
         border-radius: 16px;
         padding: 24px 28px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
         transition: transform 0.2s ease, border-color 0.2s ease;
     }
     div.stMetric:hover {
         transform: translateY(-3px);
-        border-color: rgba(255, 60, 60, 0.5);
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+        border-color: rgba(255, 77, 77, 0.6) !important;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+    }
+    
+    /* Force ALL text elements inside metrics cards to inherit white color by default */
+    div[data-testid="stMetric"] * {
+        color: #ffffff !important;
     }
     
     /* Metric typography overrides */
-    div[data-testid="stMetricValue"] {
-        color: #ff3c3c !important;
-        font-weight: 800 !important;
+    div[data-testid="stMetricValue"], 
+    div[data-testid="stMetricValue"] *,
+    div[data-testid="stMetric"] [data-testid="stMetricValue"] {
+        color: #ff4d4d !important; /* Radiant coral-red number */
+        font-weight: 900 !important;
         font-size: 2.85rem !important;
-        text-shadow: 0 0 12px rgba(255, 60, 60, 0.3);
+        text-shadow: 0 0 12px rgba(255, 77, 77, 0.45) !important;
     }
-    div[data-testid="stMetricLabel"] {
-        color: #e2e8f0 !important;
+    div[data-testid="stMetricLabel"],
+    div[data-testid="stMetricLabel"] *,
+    div[data-testid="stMetric"] [data-testid="stMetricLabel"] {
+        color: #ffffff !important; /* Pure white for maximum visibility */
+        font-weight: 800 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.08em !important;
+        font-size: 1.15rem !important;
+    }
+    div[data-testid="stMetricDelta"],
+    div[data-testid="stMetricDelta"] *,
+    div[data-testid="stMetric"] [data-testid="stMetricDelta"] {
+        font-size: 1.15rem !important;
         font-weight: 700 !important;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        font-size: 1.15rem !important;
-    }
-    div[data-testid="stMetricDelta"] {
-        font-size: 1.15rem !important;
-        font-weight: 600 !important;
+        background-color: rgba(9, 12, 18, 0.75) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 8px !important;
+        padding: 4px 10px !important;
+        display: inline-block !important;
+        margin-top: 4px !important;
     }
     
-    /* Tabs customization */
+    /* 3. TABS CUSTOMIZATION WITH HIGH CONTRAST */
     .stTabs [data-baseweb="tab-list"] {
         gap: 10px;
         background-color: transparent;
@@ -76,24 +131,30 @@ st.markdown("""
     .stTabs [data-baseweb="tab"] {
         height: 48px;
         white-space: pre-wrap;
-        background-color: rgba(30, 41, 59, 0.3);
+        background-color: rgba(30, 41, 59, 0.4);
         border-radius: 8px;
-        color: #94a3b8;
         border: 1px solid #1e293b;
         padding: 0 24px;
-        font-weight: 500;
+        font-weight: 600;
         transition: 0.3s;
     }
+    .stTabs [data-baseweb="tab"] * {
+        color: #cbd5e1 !important; /* High contrast silver-gray text for unselected tabs */
+    }
     .stTabs [data-baseweb="tab"]:hover {
-        color: #ffffff;
         background-color: rgba(255, 60, 60, 0.1);
         border-color: rgba(255, 60, 60, 0.3);
     }
+    .stTabs [data-baseweb="tab"]:hover * {
+        color: #ffffff !important;
+    }
     .stTabs [aria-selected="true"] {
         background-color: rgba(255, 60, 60, 0.2) !important;
-        color: #ffffff !important;
         border-color: #ff3c3c !important;
-        font-weight: 600 !important;
+    }
+    .stTabs [aria-selected="true"] * {
+        color: #ffffff !important; /* Pure white for active tab */
+        font-weight: 700 !important;
     }
 
     /* Embedded iframe overrides */
@@ -381,11 +442,11 @@ def render_realtime_dashboard(selected_date_range, selected_movie):
     
     # Auto refresh status badge
     st.markdown("""
-        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); padding: 14px 24px; border-radius: 12px; margin-bottom: 30px;">
-            <span style="color: #10b981; font-weight: 700; font-size: 1.25rem; display: flex; align-items: center; gap: 8px;">
-                🟢 Live Auto-Sync Active &bull; Refreshing every 5 seconds
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(34, 197, 94, 0.15); border: 2px solid rgba(34, 197, 94, 0.45); padding: 14px 24px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.1);">
+            <span style="color: #4ade80; font-weight: 800; font-size: 1.25rem; display: flex; align-items: center; gap: 8px; text-shadow: 0 0 10px rgba(74, 222, 128, 0.2);">
+            Live Auto-Sync Active &bull; Refreshing every 5 seconds
             </span>
-            <span style="color: #cbd5e1; font-size: 1.05rem; font-weight: 500; font-family: monospace;">
+            <span style="color: #ffffff; font-size: 1.05rem; font-weight: 700; font-family: monospace;">
                 Last checked: {}
             </span>
         </div>
@@ -429,7 +490,7 @@ def render_realtime_dashboard(selected_date_range, selected_movie):
                 fig_sales.update_layout(
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
-                    font_color='#cbd5e1',
+                    font_color='#ffffff',
                     title_font_size=16,
                     xaxis=dict(showgrid=True, gridcolor='#1e293b'),
                     yaxis=dict(showgrid=True, gridcolor='#1e293b')
@@ -454,7 +515,7 @@ def render_realtime_dashboard(selected_date_range, selected_movie):
             fig_tiers.update_layout(
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
-                font_color='#cbd5e1',
+                font_color='#ffffff',
                 title_font_size=16,
                 legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5)
             )
@@ -481,7 +542,7 @@ def render_realtime_dashboard(selected_date_range, selected_movie):
             fig_pop.update_layout(
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
-                font_color='#cbd5e1',
+                font_color='#ffffff',
                 coloraxis_showscale=False
             )
             st.plotly_chart(fig_pop, use_container_width=True)
@@ -502,7 +563,7 @@ def render_realtime_dashboard(selected_date_range, selected_movie):
             fig_drink.update_layout(
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
-                font_color='#cbd5e1',
+                font_color='#ffffff',
                 coloraxis_showscale=False
             )
             st.plotly_chart(fig_drink, use_container_width=True)
@@ -535,7 +596,7 @@ def render_realtime_dashboard(selected_date_range, selected_movie):
                 fig_hours.update_layout(
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
-                    font_color='#cbd5e1',
+                    font_color='#ffffff',
                     xaxis=dict(tickmode='linear', tick0=0, dtick=2, showgrid=True, gridcolor='#1e293b'),
                     yaxis=dict(showgrid=True, gridcolor='#1e293b')
                 )
@@ -560,7 +621,7 @@ def render_realtime_dashboard(selected_date_range, selected_movie):
             fig_movies.update_layout(
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
-                font_color='#cbd5e1',
+                font_color='#ffffff',
                 coloraxis_showscale=False,
                 yaxis={'categoryorder':'total ascending'}
             )
@@ -589,7 +650,7 @@ def render_realtime_dashboard(selected_date_range, selected_movie):
                 fig_intents.update_layout(
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
-                    font_color='#cbd5e1',
+                    font_color='#ffffff',
                     legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5)
                 )
                 st.plotly_chart(fig_intents, use_container_width=True)
@@ -614,7 +675,7 @@ def render_realtime_dashboard(selected_date_range, selected_movie):
                 fig_sent.update_layout(
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
-                    font_color='#cbd5e1',
+                    font_color='#ffffff',
                     showlegend=False
                 )
                 st.plotly_chart(fig_sent, use_container_width=True)
@@ -673,7 +734,7 @@ def render_realtime_dashboard(selected_date_range, selected_movie):
                 fig_hist.update_layout(
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
-                    font_color='#cbd5e1',
+                    font_color='#ffffff',
                     xaxis=dict(showgrid=True, gridcolor='#1e293b'),
                     yaxis=dict(showgrid=True, gridcolor='#1e293b')
                 )
@@ -692,7 +753,7 @@ def render_realtime_dashboard(selected_date_range, selected_movie):
                 fig_year.update_layout(
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
-                    font_color='#cbd5e1',
+                    font_color='#ffffff',
                     xaxis=dict(showgrid=True, gridcolor='#1e293b'),
                     yaxis=dict(showgrid=True, gridcolor='#1e293b')
                 )
@@ -717,7 +778,7 @@ def render_realtime_dashboard(selected_date_range, selected_movie):
                 fig_scatter.update_layout(
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
-                    font_color='#cbd5e1',
+                    font_color='#ffffff',
                     coloraxis_showscale=False,
                     xaxis=dict(showgrid=True, gridcolor='#1e293b'),
                     yaxis=dict(showgrid=True, gridcolor='#1e293b')
@@ -742,7 +803,7 @@ def render_realtime_dashboard(selected_date_range, selected_movie):
                     fig_country.update_layout(
                         paper_bgcolor='rgba(0,0,0,0)',
                         plot_bgcolor='rgba(0,0,0,0)',
-                        font_color='#cbd5e1',
+                        font_color='#ffffff',
                         legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5)
                     )
                     st.plotly_chart(fig_country, use_container_width=True)
@@ -776,7 +837,7 @@ def render_realtime_dashboard(selected_date_range, selected_movie):
                     fig_genre_bar.update_layout(
                         paper_bgcolor='rgba(0,0,0,0)',
                         plot_bgcolor='rgba(0,0,0,0)',
-                        font_color='#cbd5e1',
+                        font_color='#ffffff',
                         coloraxis_showscale=False,
                         yaxis={'categoryorder':'total ascending'}
                     )
@@ -805,7 +866,7 @@ def render_realtime_dashboard(selected_date_range, selected_movie):
                     fig_decade.update_layout(
                         paper_bgcolor='rgba(0,0,0,0)',
                         plot_bgcolor='rgba(0,0,0,0)',
-                        font_color='#cbd5e1',
+                        font_color='#ffffff',
                         barmode='stack',
                         legend=dict(orientation="h", yanchor="bottom", y=-0.25, xanchor="center", x=0.5)
                     )

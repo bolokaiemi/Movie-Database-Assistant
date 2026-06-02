@@ -42,7 +42,7 @@ window.addEventListener("scroll", () => {
 
 
 // Optional: Simple fade-in animation when sections appear
-const observer = new IntersectionObserver(entries => {
+const fadeObserver = new IntersectionObserver(entries => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
             entry.target.classList.add("show-section");
@@ -54,5 +54,5 @@ const observer = new IntersectionObserver(entries => {
 
 document.querySelectorAll(".card").forEach(card => {
     card.classList.add("hidden-section");
-    observer.observe(card);
+    fadeObserver.fadeObserve(card);
 });
