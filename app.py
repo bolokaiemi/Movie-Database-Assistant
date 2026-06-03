@@ -950,6 +950,44 @@ def post_process_chat_reply(reply, user_message):
         t_url = matched_movie["trailer_url"]
         iframe_html = f'<br><div style="margin-top:8px; border-radius:10px; overflow:hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.4);"><iframe width="100%" height="200" src="{t_url}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>'
         reply += iframe_html
+
+    # 4. Clean up any remaining raw/markdown/html YouTube links to prevent direct redirects
+    def clean_youtube_links(text):
+        def extract_id(url):
+            match = re.search(r'(?:v=|embed/|v/|shorts/|youtu\.be/|/)([a-zA-Z0-9_-]{11})', url)
+            if match:
+                return match.group(1)
+            return None
+
+        # Replace markdown links to youtube
+        markdown_pattern = r'\[[^\]]*\]\((https?://[^\s)]*youtube[^\s)]*|https?://[^\s)]*youtu\.be[^\s)]*)\)'
+        # Replace html anchor tags linking to youtube
+        html_pattern = r'<a\s+[^>]*href=["\'](https?://[^"\']*youtube[^"\']*|https?://[^"\']*youtu\.be[^"\']*)["\'][^>]*>.*?</a>'
+
+        def replacer(match):
+            url = match.group(1)
+            vid_id = extract_id(url)
+            if vid_id:
+                return f"<div style='margin-top:8px; border-radius:10px; overflow:hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.4);'><iframe width='100%' height='200' src='https://www.youtube.com/embed/{vid_id}' frameborder='0' allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture' allowfullscreen></iframe></div>"
+            return match.group(0)
+
+        text = re.sub(markdown_pattern, replacer, text)
+        text = re.sub(html_pattern, replacer, text)
+
+        # Replace standalone youtube URLs not inside src/href attributes
+        plain_pattern = r'(?<!src=["\'])(?<!href=["\'])\b(https?://(?:www\.)?(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/embed/|youtube\.com/shorts/)[a-zA-Z0-9_-]{11}[^\s<]*)\b'
+        
+        def plain_replacer(match):
+            url = match.group(1)
+            vid_id = extract_id(url)
+            if vid_id:
+                return f"<div style='margin-top:8px; border-radius:10px; overflow:hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.4);'><iframe width='100%' height='200' src='https://www.youtube.com/embed/{vid_id}' frameborder='0' allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture' allowfullscreen></iframe></div>"
+            return match.group(0)
+            
+        text = re.sub(plain_pattern, plain_replacer, text)
+        return text
+
+    reply = clean_youtube_links(reply)
         
     return reply
 

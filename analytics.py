@@ -464,7 +464,7 @@ def render_realtime_dashboard(selected_date_range, selected_movie):
         st.metric("😊 Customer Satisfaction", f"{satisfaction_score:.1f}%", delta="+2.1% positive feedback")
 
     # Tabs for structured viewing
-    tab1, tab2, tab3, tab4 = st.tabs(["📈 Quantitative Performance", "🎭 Customer Engagement", "💬 AI Sentiment & Insights", "🎬 Movie Catalog Insights"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["📈 Quantitative Performance", "🎭 Customer Engagement", "💬 AI Sentiment & Insights", "🎬 Movie Catalog Insights", "📍 Geographical Theater Map"])
 
     # ------------------------------------------
     # TAB 1: QUANTITATIVE PERFORMANCE
@@ -875,6 +875,61 @@ def render_realtime_dashboard(selected_date_range, selected_movie):
                     st.info("No decade history available.")
         else:
             st.info("Your movie collection is currently empty. Seed or save some movies to render catalog distributions!")
+
+    # ------------------------------------------
+    # TAB 5: GEOGRAPHICAL THEATER MAP
+    # ------------------------------------------
+    with tab5:
+        st.subheader("📍 Physical Cinema Geographical Coordinates & Performance")
+        st.markdown("Locate physical theaters and analyze localized sales volume by branch coordinates.")
+        
+        selected_map_city = st.selectbox("Select City to View Map", ["Enugu, Nigeria", "Bochum, Germany", "Herne, Germany"])
+        
+        # Coordinates and details
+        if "Enugu" in selected_map_city:
+            map_data = pd.DataFrame({
+                "Theater": ["Filmhouse Cinema (Polo Park)", "WNN Cinema Enugu", "Genesis Cinema Enugu"],
+                "latitude": [6.4608, 6.4428, 6.4485],
+                "longitude": [7.5097, 7.4967, 7.5050],
+                "Sales Share": ["48% (IMAX)", "32% (VIP)", "20% (Standard)"],
+                "Capacity": ["240 Seats", "120 Seats", "180 Seats"]
+            })
+            zoom_level = 13
+        elif "Bochum" in selected_map_city:
+            map_data = pd.DataFrame({
+                "Theater": ["Union Filmtheater Bochum", "Metropolis Kino Bochum"],
+                "latitude": [51.4780, 51.4795],
+                "longitude": [7.2173, 7.2220],
+                "Sales Share": ["60% (Main Hall)", "40% (Arthouse)"],
+                "Capacity": ["300 Seats", "150 Seats"]
+            })
+            zoom_level = 13
+        else: # Herne
+            map_data = pd.DataFrame({
+                "Theater": ["Filmwelt Herne", "UCI Kinowelt Ruhr Park"],
+                "latitude": [51.5372, 51.4930],
+                "longitude": [7.2195, 7.2882],
+                "Sales Share": ["35% (IMAX)", "65% (Multiplex)"],
+                "Capacity": ["220 Seats", "450 Seats"]
+            })
+            zoom_level = 12
+            
+        # Draw Streamlit map
+        st.map(map_data, zoom=zoom_level)
+        
+        st.markdown("### 📊 Branch Locations Metadata")
+        # Display Metrics table below map
+        st.dataframe(
+            map_data,
+            use_container_width=True,
+            column_config={
+                "Theater": st.column_config.TextColumn("Cinema Branch Name"),
+                "latitude": st.column_config.NumberColumn("Latitude Coord"),
+                "longitude": st.column_config.NumberColumn("Longitude Coord"),
+                "Sales Share": st.column_config.TextColumn("Ticket Sales Share"),
+                "Capacity": st.column_config.TextColumn("Theater Capacity")
+            }
+        )
 
 # Trigger the auto-refresh fragment rendering loop
 render_realtime_dashboard(selected_date_range, selected_movie)

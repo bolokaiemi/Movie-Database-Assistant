@@ -8,6 +8,9 @@
           content="width=device-width, initial-scale=1.0">
 
     <title>🎬 CinemaBot</title>
+    <!-- Leaflet.js Maps Integration -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
       <!-- GOOGLE FONTS -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
           rel="stylesheet">
@@ -45,6 +48,40 @@
         a {
             text-decoration: none;
             color: inherit;
+        }
+
+        /* Custom Dark theme for Leaflet Map Popups & Custom Elements */
+        .custom-dark-popup .leaflet-popup-content-wrapper {
+            background: #0f172a !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 60, 60, 0.4) !important;
+            border-radius: 12px !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+            font-family: 'Poppins', sans-serif !important;
+        }
+        .custom-dark-popup .leaflet-popup-tip {
+            background: #0f172a !important;
+            border-left: 1px solid rgba(255, 60, 60, 0.4) !important;
+            border-bottom: 1px solid rgba(255, 60, 60, 0.4) !important;
+        }
+        .custom-dark-popup .leaflet-popup-close-button {
+            color: #94a3b8 !important;
+            padding: 8px 8px 0 0 !important;
+        }
+        .custom-dark-popup .leaflet-popup-close-button:hover {
+            color: #ffffff !important;
+        }
+        .leaflet-container a.leaflet-popup-close-button {
+            font-size: 16px !important;
+        }
+        .city-tab-btn {
+            outline: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: all 0.2s ease;
+        }
+        .city-tab-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(255, 60, 60, 0.2);
         }
 
         /* NAVBAR (STOPLIGHT PUBLIC CINEMA THEME) */
@@ -392,6 +429,7 @@
             <a href="{{ url_for('dashboard') }}" class="nav-item" data-translate="dashboard">📊 Dashboard</a>
             <a href="/catalog" class="nav-item portal-link" data-translate="cinema_portal">🍿 Cinema Portal</a>
             <a href="/analytics" class="nav-item analytics-link" data-translate="analytics">📊 Analytics</a>
+            <a href="#" onclick="openCinemaMapModal(); return false;" class="nav-item" style="color: #ff3c3c; font-weight: bold;">📍 Cinema Map</a>
         </div>
     </div>
 
@@ -445,6 +483,7 @@
                 <a href="{{ url_for('dashboard') }}" data-translate="dashboard">📊 Dashboard</a>
                 <a href="/catalog" data-translate="cinema_portal">🍿 Cinema Portal</a>
                 <a href="/analytics" data-translate="analytics">📊 Analytics</a>
+                <a href="#" onclick="openCinemaMapModal(); return false;" style="color: #ff3c3c; font-weight: bold;">📍 Cinema Map</a>
             </div>
         </div>
     </div>
@@ -586,6 +625,7 @@
         <a href="/dashboard" title="Dashboard">📊</a>
         <a href="/movies/1" title="Movie List">📋</a>
         <a href="/refresh_banners" title="Refresh Banners">🔄</a>
+        <a href="#" onclick="openCinemaMapModal(); return false;" title="Cinema Map" style="color: #ff3c3c;">📍</a>
     </div>
 </nav>
 
@@ -781,6 +821,31 @@
         </div>
     </div>
 
+    <!-- CINEMA MAP LOCATOR MODAL -->
+    <div id="cinemaMapModal" class="cinema-map-modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 11000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;">
+        <div class="cinema-map-modal-card" style="background: #0f172a; border: 2px solid #ff3c3c; border-radius: 20px; padding: 25px; width: 100%; max-width: 900px; box-shadow: 0 15px 50px rgba(0, 0, 0, 0.8); position: relative; color: white; display: flex; flex-direction: column; height: 90vh; max-height: 700px; box-sizing: border-box; animation: modalSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
+            <button onclick="closeCinemaMapModal()" style="position: absolute; top: 15px; right: 18px; background: none; border: none; color: #94a3b8; font-size: 28px; cursor: pointer; transition: 0.2s; font-weight: 300; z-index: 10002;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#94a3b8'">×</button>
+            <h2 style="font-size: 24px; font-weight: 800; color: white; margin-bottom: 5px; margin-top: 5px; display: flex; align-items: center; gap: 8px;">📍 Stoplight Cinema Locator</h2>
+            <p style="color: #94a3b8; font-size: 13.5px; margin-bottom: 20px; margin-top: 0;">Select your city to view screens, showtimes, and get directions for physical cinema halls.</p>
+            <div class="city-selector-tabs" style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button class="city-tab-btn active" onclick="switchCity('enugu')" id="btn-enugu" style="padding: 10px 20px; background: #ff3c3c; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.3s; font-size: 14px;">Enugu, Nigeria</button>
+                <button class="city-tab-btn" onclick="switchCity('bochum')" id="btn-bochum" style="padding: 10px 20px; background: #1e293b; color: #cbd5e1; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s; font-size: 14px;">Bochum, Germany</button>
+                <button class="city-tab-btn" onclick="switchCity('herne')" id="btn-herne" style="padding: 10px 20px; background: #1e293b; color: #cbd5e1; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s; font-size: 14px;">Herne, Germany</button>
+            </div>
+            <div id="cinemaMapContainer" style="flex: 1; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.12); position: relative; background: #0c0f17; min-height: 300px;">
+                <div id="map-canvas" style="width: 100%; height: 100%; z-index: 10001;"></div>
+            </div>
+            <div style="margin-top: 15px; font-size: 12px; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px; flex-wrap: wrap; gap: 10px;">
+                <span>ℹ️ Click markers on the map to see trailers and purchase tickets directly.</span>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button onclick="shareMapWhatsApp()" style="background: rgba(37, 211, 102, 0.15); color: #25d366; border: 1px solid rgba(37, 211, 102, 0.3); padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 4px;">🟢 Share on WhatsApp</button>
+                    <button onclick="copyMapLink()" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 4px;">🔗 Copy Link</button>
+                    <button onclick="closeCinemaMapModal()" style="background: transparent; color: #ff3c3c; border: 1px solid #ff3c3c; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.3s;">Close Map</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <style>
         @keyframes modalSlideIn {
             from { transform: translateY(20px); opacity: 0; }
@@ -817,6 +882,254 @@
             const modal = document.getElementById('loginModal');
             if (e.target === modal) {
                 closeLoginModal();
+            }
+            const mapModal = document.getElementById('cinemaMapModal');
+            if (e.target === mapModal) {
+                closeCinemaMapModal();
+            }
+        });
+
+        // LEAFLET MAP LOGIC
+        let locatorMap = null;
+        let currentCity = 'enugu';
+        let activeMarkers = [];
+
+        const cityCoordinates = {
+            enugu: [6.4584, 7.5061],
+            bochum: [51.4818, 7.2162],
+            herne: [51.5372, 7.2195]
+        };
+
+        const cinemaMarkers = [
+            {
+                city: 'enugu',
+                name: 'Filmhouse Cinema (Polo Park)',
+                lat: 6.4608,
+                lng: 7.5097,
+                rating: '⭐ 4.6',
+                address: 'Polo Park Mall, Abakaliki Rd, Enugu',
+                showtimes: [
+                    { movie: 'Inception', time: '6:00 PM (IMAX)', id: 1 },
+                    { movie: 'Inception', time: '9:15 PM (IMAX)', id: 1 }
+                ],
+                trailer: 'https://www.youtube.com/embed/YoHD9XEInc0'
+            },
+            {
+                city: 'enugu',
+                name: 'WNN Cinema Enugu',
+                lat: 6.4428,
+                lng: 7.4967,
+                rating: '⭐ 4.3',
+                address: 'Independent Layout, Enugu',
+                showtimes: [
+                    { movie: 'The Dark Knight', time: '7:45 PM (VIP)', id: 3 }
+                ],
+                trailer: 'https://www.youtube.com/embed/EXeTwQWrcwY'
+            },
+            {
+                city: 'enugu',
+                name: 'Genesis Cinema Enugu',
+                lat: 6.4485,
+                lng: 7.5050,
+                rating: '⭐ 4.4',
+                address: 'Zik Ave, Enugu',
+                showtimes: [
+                    { movie: 'Interstellar', time: '5:00 PM (Standard)', id: 4 },
+                    { movie: 'Interstellar', time: '8:30 PM (Standard)', id: 4 }
+                ],
+                trailer: 'https://www.youtube.com/embed/zSWdZVtXT7E'
+            },
+            {
+                city: 'bochum',
+                name: 'Union Filmtheater Bochum',
+                lat: 51.4780,
+                lng: 7.2173,
+                rating: '⭐ 4.5',
+                address: 'Kortumstraße 16, 44787 Bochum, Germany',
+                showtimes: [
+                    { movie: 'Inception', time: '3:00 PM (Standard)', id: 1 },
+                    { movie: 'Inception', time: '7:00 PM (Standard)', id: 1 }
+                ],
+                trailer: 'https://www.youtube.com/embed/YoHD9XEInc0'
+            },
+            {
+                city: 'bochum',
+                name: 'Metropolis Kino Bochum',
+                lat: 51.4795,
+                lng: 7.2220,
+                rating: '⭐ 4.7',
+                address: 'Kortumstraße 51, 44787 Bochum, Germany',
+                showtimes: [
+                    { movie: 'Avatar: The Way of Water', time: '4:00 PM (3D)', id: 5 },
+                    { movie: 'Avatar: The Way of Water', time: '8:00 PM (3D)', id: 5 }
+                ],
+                trailer: 'https://www.youtube.com/embed/d9MyW72ELq0'
+            },
+            {
+                city: 'herne',
+                name: 'Filmwelt Herne',
+                lat: 51.5372,
+                lng: 7.2195,
+                rating: '⭐ 4.2',
+                address: 'Berliner Platz 11, 44623 Herne, Germany',
+                showtimes: [
+                    { movie: 'Interstellar', time: '6:30 PM (IMAX)', id: 4 },
+                    { movie: 'Interstellar', time: '9:30 PM (IMAX)', id: 4 }
+                ],
+                trailer: 'https://www.youtube.com/embed/zSWdZVtXT7E'
+            },
+            {
+                city: 'herne',
+                name: 'UCI Kinowelt Ruhr Park',
+                lat: 51.4930,
+                lng: 7.2882,
+                rating: '⭐ 4.4',
+                address: 'Am Einkaufszentrum 22, 44791 Bochum/Herne Border',
+                showtimes: [
+                    { movie: 'The Dark Knight', time: '5:15 PM (Standard)', id: 3 },
+                    { movie: 'The Dark Knight', time: '8:45 PM (Standard)', id: 3 }
+                ],
+                trailer: 'https://www.youtube.com/embed/EXeTwQWrcwY'
+            }
+        ];
+
+        function openCinemaMapModal(preselectedCity = 'enugu', targetTheater = '') {
+            const modal = document.getElementById('cinemaMapModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                setTimeout(() => {
+                    initLocatorMap(preselectedCity, targetTheater);
+                }, 100);
+            }
+        }
+
+        function closeCinemaMapModal() {
+            const modal = document.getElementById('cinemaMapModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        function initLocatorMap(city = 'enugu', targetTheater = '') {
+            currentCity = city;
+            
+            activeMarkers.forEach(m => m.remove());
+            activeMarkers = [];
+            
+            document.querySelectorAll('.city-tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+                btn.style.background = '#1e293b';
+                btn.style.color = '#cbd5e1';
+            });
+            
+            const activeBtn = document.getElementById('btn-' + city);
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+                activeBtn.style.background = '#ff3c3c';
+                activeBtn.style.color = 'white';
+            }
+            
+            const center = cityCoordinates[city] || cityCoordinates.enugu;
+            
+            if (!locatorMap) {
+                locatorMap = L.map('map-canvas').setView(center, 13);
+                
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                    subdomains: 'abcd',
+                    maxZoom: 20
+                }).addTo(locatorMap);
+            } else {
+                locatorMap.setView(center, 13);
+                setTimeout(() => {
+                    locatorMap.invalidateSize();
+                }, 50);
+            }
+            
+            let targetMarkerToOpen = null;
+            
+            cinemaMarkers.forEach(cinema => {
+                if (cinema.city === city) {
+                    const marker = L.marker([cinema.lat, cinema.lng]).addTo(locatorMap);
+                    
+                    let showtimeHtml = '';
+                    cinema.showtimes.forEach(st => {
+                        showtimeHtml += `
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px;">
+                                <span style="font-weight:600; font-size:11px; color:#ffffff;">${st.movie}</span>
+                                <a href="/purchase/${st.id}" style="font-size:10px; background:#ff3c3c; color:white; padding:3px 8px; border-radius:4px; text-decoration:none; font-weight:bold;">${st.time}</a>
+                            </div>
+                        `;
+                    });
+                    
+                    const popupContent = `
+                        <div style="color: #ffffff; font-family: sans-serif; width: 260px; padding: 5px 0;">
+                            <h3 style="margin: 0 0 4px 0; font-size: 14px; color: #ff3c3c; font-weight:800;">📍 ${cinema.name}</h3>
+                            <div style="font-size: 11px; color: #06b6d4; margin-bottom: 8px; font-weight:700;">${cinema.rating} &bull; ${cinema.address}</div>
+                            
+                            <div style="margin-bottom: 10px; font-weight:800; font-size:10px; text-transform:uppercase; color:#94a3b8; letter-spacing:1px;">New Releases & Showtimes:</div>
+                            <div style="margin-bottom: 12px;">
+                                ${showtimeHtml}
+                            </div>
+                            
+                            <div style="margin-bottom: 4px; font-weight:800; font-size:10px; text-transform:uppercase; color:#94a3b8; letter-spacing:1px;">Watch Trailer:</div>
+                            <div style="border-radius: 8px; overflow:hidden; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+                                <iframe width="100%" height="130" src="${cinema.trailer}" frameborder="0" allowfullscreen style="display:block;"></iframe>
+                            </div>
+                        </div>
+                    `;
+                    
+                    marker.bindPopup(popupContent, {
+                        maxWidth: 290,
+                        className: 'custom-dark-popup'
+                    });
+                    
+                    activeMarkers.push(marker);
+                    
+                    if (targetTheater && cinema.name.toLowerCase().includes(targetTheater.toLowerCase())) {
+                        targetMarkerToOpen = marker;
+                    }
+                }
+            });
+            
+            if (targetMarkerToOpen) {
+                setTimeout(() => {
+                    targetMarkerToOpen.openPopup();
+                }, 300);
+            }
+        }
+
+        function switchCity(city) {
+            initLocatorMap(city);
+        }
+
+        function shareMapWhatsApp() {
+            const mapUrl = window.location.origin + '/?map=true&city=' + currentCity;
+            const text = encodeURIComponent("Check out the interactive Stoplight Cinema Map showing physical locations, schedules, and trailer video players in Enugu, Bochum, and Herne! 🎬🍿\n" + mapUrl);
+            window.open('https://api.whatsapp.com/send?text=' + text, '_blank');
+        }
+
+        function copyMapLink() {
+            const mapUrl = window.location.origin + '/?map=true&city=' + currentCity;
+            navigator.clipboard.writeText(mapUrl).then(() => {
+                if (typeof window.showToast === 'function') {
+                    window.showToast("Map link copied to clipboard! 🔗");
+                } else {
+                    alert("Map link copied to clipboard! 🔗");
+                }
+            }).catch(err => {
+                alert("Failed to copy link: " + err);
+            });
+        }
+
+        // Auto open if parameter '?map=true' is in the URL query string
+        window.addEventListener('load', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('map') === 'true') {
+                const city = urlParams.get('city') || 'enugu';
+                setTimeout(() => {
+                    openCinemaMapModal(city);
+                }, 500); // Small delay to let Leaflet settle on load
             }
         });
     </script>

@@ -185,6 +185,13 @@ btn.addEventListener('click', () => {
   // Smooth scroll to the top of ticket
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
+  // Automatically trigger the Map Pop-up locator to help them locate their screen!
+  setTimeout(() => {
+    if (typeof openPurchaseSuccessMap === 'function') {
+      openPurchaseSuccessMap();
+    }
+  }, 1200);
+
   // 2. Trigger email receipt dispatch if email address was provided
   const emailStatusEl = document.getElementById('ticketEmailStatus');
   if (userEmail) {

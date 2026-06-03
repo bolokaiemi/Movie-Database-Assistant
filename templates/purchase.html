@@ -248,7 +248,38 @@
               </div>
             </div>
           </div>
+          
+          <!-- Cinema Directions Call-to-Action -->
+          <div style="text-align: center; margin-top: 30px; animation: modalSlideIn 0.5s ease;">
+              <p style="color: #94a3b8; font-size: 13.5px; margin-bottom: 12px;">Need directions to the screen? Find your cinema branch on our interactive map:</p>
+              <button onclick="openPurchaseSuccessMap()" style="background: linear-gradient(135deg, #ff3c3c, #ef4444); color: white; border: none; padding: 12px 28px; border-radius: 10px; font-weight: 800; font-size: 14px; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(255, 60, 60, 0.35);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                  📍 View Cinema Directions & Map
+              </button>
+          </div>
         </div>
+
+        <script>
+            function openPurchaseSuccessMap() {
+                const screenText = document.getElementById('ticketScreen').textContent || "";
+                let city = 'enugu';
+                let theater = '';
+                
+                if (screenText.includes("IMAX") || screenText.includes("Screen 2")) {
+                    city = 'enugu';
+                    theater = 'Filmhouse';
+                } else if (screenText.includes("VIP") || screenText.includes("Screen 3")) {
+                    city = 'enugu';
+                    theater = 'WNN';
+                } else if (screenText.includes("Standard") || screenText.includes("Screen 1")) {
+                    city = 'enugu';
+                    theater = 'Genesis';
+                }
+                
+                if (typeof openCinemaMapModal === 'function') {
+                    openCinemaMapModal(city, theater);
+                }
+            }
+        </script>
       </div>
     </div>
 
