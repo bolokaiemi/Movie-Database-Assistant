@@ -808,18 +808,7 @@ def get_clean_embed_trailer(title, default_url):
             
         return None
 
-    # Performance Boost: Parse default_url locally and return instantly to bypass network delay!
-    if default_url:
-        key = extract_yt_key(default_url)
-        if key:
-            result = f"https://www.youtube.com/embed/{key}"
-            TRAILER_CACHE[cache_key] = result
-            return result
-        if "http" in default_url:
-            TRAILER_CACHE[cache_key] = default_url
-            return default_url
-
-    # Try fetching from TMDB if database didn't have a valid YouTube link
+    # Try fetching from TMDB first
     try:
         api_key = os.getenv("TMDB_API_KEY")
         if api_key:
@@ -837,6 +826,17 @@ def get_clean_embed_trailer(title, default_url):
                         return result
     except Exception as e:
         print(f"Error fetching TMDB trailer for {title}:", e)
+
+    # Fallback to the database default_url if TMDB fails or doesn't find one
+    if default_url:
+        key = extract_yt_key(default_url)
+        if key:
+            result = f"https://www.youtube.com/embed/{key}"
+            TRAILER_CACHE[cache_key] = result
+            return result
+        if "http" in default_url:
+            TRAILER_CACHE[cache_key] = default_url
+            return default_url
 
     # Defensive default
     result = "https://www.youtube.com/embed/YoHD9XEInc0"
@@ -992,6 +992,50 @@ def post_process_chat_reply(reply, user_message):
     return reply
 
 
+def detect_language(text):
+    """
+    Detects language of input text (supporting English, German, French, Spanish).
+    Uses langdetect library with a robust stopword-based fallback.
+    """
+    default_lang = "en"
+    if not text or not text.strip():
+        return default_lang
+
+    text_clean = text.strip()
+    
+    # 1. Attempt langdetect detection
+    try:
+        from langdetect import detect
+        detected = detect(text_clean)
+        if detected in ['en', 'de', 'fr', 'es']:
+            return detected
+    except Exception as e:
+        print("[Language Detection] langdetect error/missing:", e)
+
+    # 2. Heuristics fallback (stopword count)
+    text_lower = text_clean.lower()
+    import re
+    words = set(re.findall(r'\b\w+\b', text_lower))
+
+    lang_keywords = {
+        "de": {"ich", "ist", "und", "der", "die", "das", "ein", "eine", "nicht", "mit", "auf", "für", "von", "zu", "wir", "ihr", "sie", "es", "sind", "war", "kann", "wie", "was", "wo", "hallo", "film", "filme", "kino", "karten", "trailer", "bitte", "danke"},
+        "fr": {"le", "la", "les", "et", "un", "une", "est", "dans", "pour", "en", "qui", "que", "nous", "vous", "ils", "elles", "film", "films", "cinéma", "billet", "billets", "bande-annonce", "bonjour", "merci", "salut"},
+        "es": {"el", "la", "los", "las", "y", "un", "una", "es", "en", "para", "con", "que", "nosotros", "vosotros", "ellos", "ellas", "película", "películas", "cine", "entrada", "entradas", "tráiler", "hola", "gracias"},
+        "en": {"the", "and", "a", "an", "is", "in", "to", "for", "with", "on", "of", "it", "we", "you", "they", "he", "she", "movie", "movies", "cinema", "ticket", "tickets", "trailer", "hello", "thanks", "please"}
+    }
+
+    scores = {"en": 0, "de": 0, "fr": 0, "es": 0}
+    for word in words:
+        for lang, keywords in lang_keywords.items():
+            if word in keywords:
+                scores[lang] += 1
+
+    max_lang = max(scores, key=scores.get)
+    if scores[max_lang] > 0:
+        return max_lang
+
+    return default_lang
+
 # =========================================
 # CHAT
 # =========================================
@@ -1005,7 +1049,20 @@ def chat():
     # Get rich movie metadata from database
     movie_context = get_chatbot_movie_context()
 
-    system_prompt = f"""You are CinemaBot 🎬. Always respond in the same language as the user's message (e.g., respond in German if they ask in German, French if they ask in French, Spanish if they ask in Spanish, and English if in English). Default to English.
+    # Automatically detect the user's message language on the backend
+    detected_lang = detect_language(user_message)
+    lang_names = {
+        "en": "English",
+        "de": "German",
+        "fr": "French",
+        "es": "Spanish"
+    }
+    target_lang = lang_names.get(detected_lang, "English")
+
+    system_prompt = f"""You are CinemaBot 🎬. You MUST respond in {target_lang} because the user's message is written/spoken in {target_lang}. Always reply in the same language.
+
+GERMAN LANGUAGE DIRECTIVE (FORMAL ADDRESS / HÖFLICHKEITSFORM):
+When responding in German, you must ALWAYS use the formal address "Sie" (capitalized), along with its related formal pronouns ("Ihr", "Ihre", "Ihnen", etc.). NEVER use the informal "du", "dein", or "ihr". Keep your tone polite, respectful, professional, and formal.
 
 You have access to the movie catalog and the user's personal collection. Use this context to answer questions accurately!
 {movie_context}
