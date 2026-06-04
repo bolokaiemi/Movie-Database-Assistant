@@ -478,7 +478,7 @@ function addMessage(text, sender) {
 // LOGIN
 // =========================
 
-window.login = function () {
+window.login = async function () {
     const userEl = document.getElementById("username");
     const passEl = document.getElementById("password");
     if (!userEl || !passEl) return;
@@ -486,30 +486,50 @@ window.login = function () {
     const user = userEl.value;
     const pass = passEl.value;
 
-    if (user === "student" && pass === "cinema123") {
-        // Hide login
-        const loginEl = document.getElementById("loginSection");
-        if (loginEl) loginEl.style.display = "none";
+    try {
+        const res = await fetch("/api/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ username: user, password: pass })
+        });
 
-        // Show feedback form
-        const feedbackEl = document.getElementById("feedbackSection");
-        if (feedbackEl) feedbackEl.style.display = "block";
+        if (!res.ok) {
+            alert("Connection error during login.");
+            return;
+        }
 
-        // Show logout button
-        const logoutEl = document.getElementById("logoutContainer");
-        if (logoutEl) logoutEl.style.display = "block";
+        const data = await res.json();
 
-        // Toggle Analytics Dashboard Containers
-        const lockedContainer = document.getElementById("analyticsLockedContainer");
-        const dashboardContainer = document.getElementById("analyticsDashboardContainer");
-        if (lockedContainer) lockedContainer.style.display = "none";
-        if (dashboardContainer) dashboardContainer.style.display = "block";
+        if (data.success) {
+            // Hide login
+            const loginEl = document.getElementById("loginSection");
+            if (loginEl) loginEl.style.display = "none";
 
-        // Save login state
-        localStorage.setItem("cinemaLoggedIn", "true");
-        localStorage.setItem("cinemaUser", user);
-    } else {
-        alert("Invalid login");
+            // Show feedback form
+            const feedbackEl = document.getElementById("feedbackSection");
+            if (feedbackEl) feedbackEl.style.display = "block";
+
+            // Show logout button
+            const logoutEl = document.getElementById("logoutContainer");
+            if (logoutEl) logoutEl.style.display = "block";
+
+            // Toggle Analytics Dashboard Containers
+            const lockedContainer = document.getElementById("analyticsLockedContainer");
+            const dashboardContainer = document.getElementById("analyticsDashboardContainer");
+            if (lockedContainer) lockedContainer.style.display = "none";
+            if (dashboardContainer) dashboardContainer.style.display = "block";
+
+            // Save login state
+            localStorage.setItem("cinemaLoggedIn", "true");
+            localStorage.setItem("cinemaUser", user);
+        } else {
+            alert(data.message || "Invalid login");
+        }
+    } catch (error) {
+        console.error("Login Error:", error);
+        alert("An error occurred during login.");
     }
 };
 

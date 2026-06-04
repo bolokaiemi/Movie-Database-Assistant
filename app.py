@@ -1110,6 +1110,28 @@ CRITICAL FORMATTING INSTRUCTIONS FOR POSTERS & TRAILERS:
 
 
 # =========================================
+# ADMIN LOGIN API
+# =========================================
+@app.route("/api/login", methods=["POST"])
+def api_login():
+    try:
+        data = request.get_json() or {}
+        user = data.get("username", "")
+        password = data.get("password", "")
+        
+        admin_user = os.getenv("ADMIN_USERNAME", "student")
+        admin_pass = os.getenv("ADMIN_PASSWORD", "cinema123")
+        
+        if user == admin_user and password == admin_pass:
+            return jsonify({"success": True})
+        else:
+            return jsonify({"success": False, "message": "Invalid username or password"})
+    except Exception as e:
+        print("LOGIN ERROR:", e)
+        return jsonify({"success": False, "message": "Internal server login error"})
+
+
+# =========================================
 # ADD MOVIE
 # =========================================
 @app.route("/add_movie", methods=["POST"])
