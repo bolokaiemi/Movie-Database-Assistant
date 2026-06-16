@@ -28,7 +28,7 @@
 {% endblock %}
 
 {% block content %}
-<div style="max-width: 1000px; margin: 40px auto; padding: 0 20px;">
+<div style="max-width: 1400px; margin: 40px auto; padding: 0 20px;">
     <!-- HOLISTIC CONTROL VIEW -->
     <div class="leaderboard" style="padding: 0; background: none; box-shadow: none; border: none; margin-top: 0;">
         
@@ -86,137 +86,216 @@
                     <a href="/movies/1" style="background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.12); font-weight: bold; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-size: 13.5px; transition: 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">📋 Curate Watchlist Vault</a>
                 </div>
             </div>
+
+            <!-- CINEMA CATALOG MANAGER EXPANDER PANEL -->
+            <div style="background: rgba(30, 41, 59, 0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 28px; text-align: left; margin-top: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
+                <details id="catalogManagerDetails" style="width: 100%; overflow: hidden;" open>
+                    <summary style="cursor: pointer; font-size: 18px; color: var(--accent); font-weight: 800; list-style: none; display: flex; justify-content: space-between; align-items: center; user-select: none; outline: none;">
+                        <span style="display: flex; align-items: center; gap: 8px;">🎬 Add New Movie to Catalog</span>
+                        <span style="font-size: 11px; opacity: 0.7; background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 12px; font-weight: normal;">Curation console</span>
+                    </summary>
+                    <div style="padding-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="color: #cbd5e1; font-size: 13.5px; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
+                                <span>Movie Title *</span>
+                                <button type="button" onclick="autofillMovieDetails(event)" style="background: rgba(34, 211, 238, 0.15); color: #22d3ee; border: 1px solid rgba(34, 211, 238, 0.3); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.2s;" onmouseover="this.style.background='rgba(34, 211, 238, 0.25)'" onmouseout="this.style.background='rgba(34, 211, 238, 0.15)'">✨ Auto-Fill Metadata</button>
+                            </label>
+                            <div style="position: relative; width: 100%;">
+                                <input type="text" id="catalogTitle" placeholder="e.g. Inside Out 2" style="padding: 12px 40px 12px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #0f172a; color: white; font-size: 14px; outline: none; box-sizing: border-box; width: 100%;">
+                                <button type="button" onclick="startFormVoiceInput('catalogTitle')" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; font-size: 16px; cursor: pointer; transition: 0.2s; padding: 4px;" title="Listen with microphone">🎤</button>
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="color: #cbd5e1; font-size: 13.5px; font-weight: bold;">Genre(s) *</label>
+                            <div style="position: relative; width: 100%;">
+                                <input type="text" id="catalogGenre" placeholder="e.g. Animation / Comedy / Family" style="padding: 12px 40px 12px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #0f172a; color: white; font-size: 14px; outline: none; box-sizing: border-box; width: 100%;">
+                                <button type="button" onclick="startFormVoiceInput('catalogGenre')" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; font-size: 16px; cursor: pointer; transition: 0.2s; padding: 4px;" title="Listen with microphone">🎤</button>
+                            </div>
+                        </div>
+                        <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 8px;">
+                            <label id="catalogDescriptionLabel" style="color: #cbd5e1; font-size: 13.5px; font-weight: bold;">Description / Overview *</label>
+                            <textarea id="catalogDescription" placeholder="Provide a brief summary of the movie plot..." style="width: 100%; height: 80px; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #0f172a; color: white; font-size: 14px; outline: none; resize: none; font-family: inherit; box-sizing: border-box;"></textarea>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="color: #cbd5e1; font-size: 13.5px; font-weight: bold;">Poster Image URL</label>
+                            <input type="text" id="catalogPosterUrl" placeholder="https://... or leave empty for default placeholder" style="padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #0f172a; color: white; font-size: 14px; outline: none; box-sizing: border-box;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="color: #cbd5e1; font-size: 13.5px; font-weight: bold;">YouTube Trailer Link *</label>
+                            <input type="text" id="catalogTrailerUrl" placeholder="e.g. https://www.youtube.com/watch?v=..." style="padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #0f172a; color: white; font-size: 14px; outline: none; box-sizing: border-box;">
+                            <span style="color: #64748b; font-size: 11px;">Note: Direct watch link or embed URL. We will parse it and provide a click-to-play player.</span>
+                        </div>
+                        <div style="grid-column: span 2; padding-top: 10px; display: flex; justify-content: flex-end;">
+                            <button onclick="submitNewCatalogMovie()" style="background: var(--accent); color: black; font-weight: bold; border: none; padding: 12px 30px; border-radius: 8px; cursor: pointer; font-size: 13.5px; transition: 0.3s; box-shadow: 0 4px 12px rgba(255, 60, 60, 0.25);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">Save to Catalog</button>
+                        </div>
+                    </div>
+                </details>
+            </div>
+
+            <!-- EDIT / UPDATE EXISTING MOVIE EXPANDER PANEL -->
+            <div style="background: rgba(30, 41, 59, 0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 28px; text-align: left; margin-top: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
+                <details id="catalogEditorDetails" style="width: 100%; overflow: hidden;">
+                    <summary style="cursor: pointer; font-size: 18px; color: var(--accent); font-weight: 800; list-style: none; display: flex; justify-content: space-between; align-items: center; user-select: none; outline: none;">
+                        <span style="display: flex; align-items: center; gap: 8px;">📝 Edit / Update Existing Movie</span>
+                        <span style="font-size: 11px; opacity: 0.7; background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 12px; font-weight: normal;">Update console</span>
+                    </summary>
+                    <div style="padding-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        
+                        <!-- Dropdown Select Movie -->
+                        <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 8px;">
+                            <label style="color: #cbd5e1; font-size: 13.5px; font-weight: bold;">Select Movie to Edit *</label>
+                            <select id="editMovieSelect" onchange="loadMovieToEdit()" style="padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #0f172a; color: white; font-size: 14px; outline: none; box-sizing: border-box; width: 100%;">
+                                <option value="">-- Choose an existing movie to modify --</option>
+                                {% for m in catalog_movies %}
+                                    <option value="{{ m.id }}" data-title="{{ m.title }}" data-genre="{{ m.genre }}" data-desc="{{ m.description }}" data-poster="{{ m.poster_url }}" data-trailer="{{ m.trailer_url }}">{{ m.title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Editable Fields (Hidden by default until a movie is selected) -->
+                        <div id="editorFieldsContainer" style="display: none; grid-column: span 2; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <input type="hidden" id="editMovieId">
+                            
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <label style="color: #cbd5e1; font-size: 13.5px; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
+                                    <span>Movie Title *</span>
+                                    <button type="button" onclick="autofillEditMovieDetails(event)" style="background: rgba(34, 211, 238, 0.15); color: #22d3ee; border: 1px solid rgba(34, 211, 238, 0.3); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.2s;" onmouseover="this.style.background='rgba(34, 211, 238, 0.25)'" onmouseout="this.style.background='rgba(34, 211, 238, 0.15)'">✨ Re-Autofill Details</button>
+                                </label>
+                                <div style="position: relative; width: 100%;">
+                                    <input type="text" id="editTitle" placeholder="e.g. Inception" style="padding: 12px 40px 12px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #0f172a; color: white; font-size: 14px; outline: none; box-sizing: border-box; width: 100%;">
+                                    <button type="button" onclick="startFormVoiceInput('editTitle')" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; font-size: 16px; cursor: pointer; transition: 0.2s; padding: 4px;" title="Listen with microphone">🎤</button>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <label style="color: #cbd5e1; font-size: 13.5px; font-weight: bold;">Genre(s) *</label>
+                                <div style="position: relative; width: 100%;">
+                                    <input type="text" id="editGenre" placeholder="e.g. Action / Sci-Fi" style="padding: 12px 40px 12px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #0f172a; color: white; font-size: 14px; outline: none; box-sizing: border-box; width: 100%;">
+                                    <button type="button" onclick="startFormVoiceInput('editGenre')" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; font-size: 16px; cursor: pointer; transition: 0.2s; padding: 4px;" title="Listen with microphone">🎤</button>
+                                </div>
+                            </div>
+                            
+                            <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 8px;">
+                                <label id="editDescriptionLabel" style="color: #cbd5e1; font-size: 13.5px; font-weight: bold;">Description / Overview *</label>
+                                <textarea id="editDescription" placeholder="Provide a brief summary..." style="width: 100%; height: 80px; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #0f172a; color: white; font-size: 14px; outline: none; resize: none; font-family: inherit; box-sizing: border-box;"></textarea>
+                            </div>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <label style="color: #cbd5e1; font-size: 13.5px; font-weight: bold;">Poster Image URL</label>
+                                <input type="text" id="editPosterUrl" placeholder="Poster URL" style="padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #0f172a; color: white; font-size: 14px; outline: none; box-sizing: border-box;">
+                            </div>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <label style="color: #cbd5e1; font-size: 13.5px; font-weight: bold;">YouTube Trailer Link *</label>
+                                <input type="text" id="editTrailerUrl" placeholder="Trailer URL link" style="padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #0f172a; color: white; font-size: 14px; outline: none; box-sizing: border-box;">
+                            </div>
+                            
+                            <div style="grid-column: span 2; padding-top: 10px; display: flex; justify-content: flex-end;">
+                                <button onclick="submitUpdateCatalogMovie()" style="background: var(--accent); color: black; font-weight: bold; border: none; padding: 12px 30px; border-radius: 8px; cursor: pointer; font-size: 13.5px; transition: 0.3s; box-shadow: 0 4px 12px rgba(255, 60, 60, 0.25);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">Update Movie Details</button>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </details>
+            </div>
+
+            <!-- TICKET CANCELLATION MANAGER EXPANDER PANEL -->
+            <div style="background: rgba(30, 41, 59, 0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 28px; text-align: left; margin-top: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
+                <details id="bookingManagerDetails" style="width: 100%; overflow: hidden;">
+                    <summary style="cursor: pointer; font-size: 18px; color: var(--accent); font-weight: 800; list-style: none; display: flex; justify-content: space-between; align-items: center; user-select: none; outline: none;">
+                        <span style="display: flex; align-items: center; gap: 8px;">🎫 Manage Bookings & Cancellations</span>
+                        <span style="font-size: 11px; opacity: 0.7; background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 12px; font-weight: normal;">Void console</span>
+                    </summary>
+                    <div style="padding-top: 20px; display: flex; flex-direction: column; gap: 15px;">
+                        <p style="color: #94a3b8; font-size: 13.5px; margin: 0 0 10px 0;">Look up customer bookings by ticket code to verify status, process manual refunds, or cancel transactions.</p>
+                        
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="adminLookupTicketCode" placeholder="Enter Ticket Code (e.g. MOV-XXXXXXXX)" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #0f172a; color: white; font-size: 14px; outline: none;">
+                            <button onclick="adminLookupBooking()" style="background: var(--accent); color: black; font-weight: bold; border: none; padding: 0 24px; border-radius: 8px; cursor: pointer; font-size: 13.5px; transition: 0.3s;">Verify Ticket</button>
+                        </div>
+                        
+                        <!-- Lookup Result Container -->
+                        <div id="adminLookupResult" style="display: none; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 20px; margin-top: 10px;">
+                            <h5 style="margin: 0 0 12px 0; font-size: 15px; color: white;">Booking Information</h5>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 13.5px; color: #cbd5e1;">
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 6px 0; font-weight: bold; color: #94a3b8; width: 120px;">Film:</td><td id="resMovieTitle" style="padding: 6px 0;">-</td></tr>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 6px 0; font-weight: bold; color: #94a3b8;">Created At:</td><td id="resCreatedAt" style="padding: 6px 0;">-</td></tr>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 6px 0; font-weight: bold; color: #94a3b8;">Status:</td><td id="resStatus" style="padding: 6px 0; font-weight: bold;">-</td></tr>
+                            </table>
+                            
+                            <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+                                <button id="adminCancelBookingBtn" onclick="adminCancelCurrentBooking()" style="background: #ef4444; color: white; font-weight: bold; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 13px; transition: 0.3s; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);">Void & Refund Booking</button>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+            </div>
             
         </div>
     </div>
 
-    <!-- REAL-TIME REVIEWS & FEEDBACK STREAM (Only shown when admin is logged in) -->
-    <div id="reviewsStreamSection" style="display: none; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 30px; margin-top: 40px; margin-bottom: 20px;">
-        
-        <!-- COLUMN 1: CLASSMATE FEEDBACK -->
-        <div style="background: rgba(15, 23, 42, 0.55); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); height: fit-content; backdrop-filter: blur(12px);">
-            <h3 style="font-size: 18px; font-weight: 800; color: var(--accent); margin-top: 0; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                💬 Classmate Project Reviews
-            </h3>
-            <p style="color: #94a3b8; font-size: 13.5px; margin-bottom: 20px; line-height: 1.5;">Review logs left by classmates and peer evaluators during presentations.</p>
-            
-            <div id="classmateFeedbackList" style="display: flex; flex-direction: column; gap: 15px; max-height: 400px; overflow-y: auto; padding-right: 5px;">
-                {% if feedbacks %}
-                    {% for f in feedbacks %}
-                    <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <span style="color: #ffffff; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">
-                                👤 {{ f.username }}
-                            </span>
-                            <span style="color: #64748b; font-size: 11px;">
-                                {{ f.created_at }}
-                            </span>
-                        </div>
-                        <p style="color: #cbd5e1; font-size: 13.5px; line-height: 1.5; margin: 0; word-break: break-word;">{{ f.feedback }}</p>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <div style="text-align: center; color: #64748b; padding: 40px 0; font-size: 14px;">
-                        No classmate reviews submitted yet. Use the expander card below to submit feedback!
-                    </div>
-                {% endif %}
-            </div>
-        </div>
 
-        <!-- COLUMN 2: CUSTOMER MOVIE REVIEWS -->
-        <div style="background: rgba(15, 23, 42, 0.55); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); height: fit-content; backdrop-filter: blur(12px);">
-            <h3 style="font-size: 18px; font-weight: 800; color: #ff3c3c; margin-top: 0; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                ⭐ Recent Movie Reviews
-            </h3>
-            <p style="color: #94a3b8; font-size: 13.5px; margin-bottom: 20px; line-height: 1.5;">Live reviews and star ratings submitted by customers on catalog movies.</p>
-            
-            <div style="display: flex; flex-direction: column; gap: 15px; max-height: 400px; overflow-y: auto; padding-right: 5px;">
-                {% if movie_reviews %}
-                    {% for r in movie_reviews %}
-                    <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                            <span style="color: #ffffff; font-weight: 700; font-size: 14px;">
-                                ✍️ {{ r.username }}
-                            </span>
-                            <span style="color: #ffb703; font-weight: bold; font-size: 13px;">
-                                {% for i in range(r.rating) %}⭐{% endfor %}
-                            </span>
-                        </div>
-                        <div style="font-size: 11px; color: #ff3c3c; font-weight: bold; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
-                            🎬 Film: {{ r.movie_title or "General" }}
-                        </div>
-                        <p style="color: #cbd5e1; font-size: 13.5px; line-height: 1.5; margin: 0; word-break: break-word;">"{{ r.comment }}"</p>
-                        <div style="color: #64748b; font-size: 10px; margin-top: 8px; text-align: right;">
-                            {{ r.created_at }}
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <div style="text-align: center; color: #64748b; padding: 40px 0; font-size: 14px;">
-                        No movie reviews found in the database.
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-        
-    </div>
-
-    <!-- CLASSMATE FEEDBACK EXPANDER SECTION (Toggled by login state, compiles under admin views) -->
-    <div id="feedbackSection" style="display:none; width: 100%; margin: 40px auto 10px auto; padding: 0; box-sizing: border-box;">
-        <details style="background: rgba(30, 41, 59, 0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: 0.3s; backdrop-filter: blur(12px);" open>
-            <summary style="cursor: pointer; padding: 18px 24px; font-size: 16px; color: var(--accent); font-weight: 700; list-style: none; display: flex; justify-content: space-between; align-items: center; user-select: none; outline: none; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                <span style="display: flex; align-items: center; gap: 8px;">💬 Project Review & Classmate Feedback</span>
-                <span style="font-size: 11px; opacity: 0.7; background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 12px; font-weight: normal;">Expander panel</span>
-            </summary>
-            <div style="padding: 24px;">
-                <p style="color: #94a3b8; font-size: 14px; margin-top: 0; margin-bottom: 15px;">Leave feedback or review notes regarding the Cinema Analytics dashboard, multi-turn AI features, and user database models.</p>
-                <textarea id="feedbackText" placeholder="Enter your comments, reviews, or project feedback here..." style="width: 100%; height: 100px; padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: #0f172a; color: white; font-size: 14px; outline: none; resize: none; margin-bottom: 15px; font-family: inherit; box-sizing: border-box;"></textarea>
-                <button onclick="submitFeedback()" style="background: var(--accent); color: black; font-weight: bold; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-size: 13.5px; transition: 0.3s; box-shadow: 0 4px 12px rgba(255, 60, 60, 0.25);">Submit Feedback</button>
-            </div>
-        </details>
-    </div>
-</div>
 
 <script>
-    function submitFeedback() {
-        const feedbackText = document.getElementById("feedbackText").value.trim();
-        if (!feedbackText) {
-            alert("Please enter some feedback comments first!");
+
+
+    function submitNewCatalogMovie() {
+        const title = document.getElementById("catalogTitle").value.trim();
+        const genre = document.getElementById("catalogGenre").value.trim();
+        const description = document.getElementById("catalogDescription").value.trim();
+        const posterUrl = document.getElementById("catalogPosterUrl").value.trim();
+        const trailerUrl = document.getElementById("catalogTrailerUrl").value.trim();
+
+        if (!title || !genre || !description || !trailerUrl) {
+            alert("Please fill in all required fields marked with *!");
             return;
         }
-        
-        fetch("/api/classmate_feedback", {
+
+        fetch("/api/add_catalog_movie", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                feedback: feedbackText
+                title: title,
+                genre: genre,
+                description: description,
+                poster_url: posterUrl,
+                trailer_url: trailerUrl
             })
         })
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                alert("Thank you! Your feedback has been recorded successfully on the dashboard! 🚀");
-                document.getElementById("feedbackText").value = "";
-                // Reload page to show new feedback in the review stream immediately!
+                alert(data.message + " 🎉\nShowtimes and ticket tiers have been auto-created.");
+                // Reset inputs
+                document.getElementById("catalogTitle").value = "";
+                document.getElementById("catalogGenre").value = "";
+                document.getElementById("catalogDescription").value = "";
+                document.getElementById("catalogPosterUrl").value = "";
+                document.getElementById("catalogTrailerUrl").value = "";
+                // Reload page to refresh metrics stream!
                 window.location.reload();
             } else {
-                alert("Error saving feedback: " + data.message);
+                alert("Error: " + data.message);
             }
         })
         .catch(err => {
-            console.error("Feedback submit error:", err);
-            alert("Server connection failed. Could not submit feedback.");
+            console.error("Add movie catalog error:", err);
+            alert("Connection error. Could not save movie.");
         });
     }
 
     // Override page load to handle custom displays for classmate review sections based on admin session state
     window.addEventListener("load", () => {
-        const loggedIn = localStorage.getItem("cinemaLoggedIn");
-        if (loggedIn === "true") {
-            const streamsSection = document.getElementById("reviewsStreamSection");
-            if (streamsSection) streamsSection.style.display = "grid";
+        // Attach event listeners for automatic autofill on blur (focus loss)
+        const titleInput = document.getElementById("catalogTitle");
+        const genreInput = document.getElementById("catalogGenre");
+        if (titleInput) {
+            titleInput.addEventListener("blur", checkAndTriggerAutoFill);
+        }
+        if (genreInput) {
+            genreInput.addEventListener("blur", checkAndTriggerAutoFill);
         }
     });
 
@@ -226,21 +305,407 @@
         if (typeof originalLogout === "function") {
             originalLogout();
         }
-        const streamsSection = document.getElementById("reviewsStreamSection");
-        if (streamsSection) streamsSection.style.display = "none";
     };
 
     // Hook login successful action to show streams section dynamically
     const originalLogin = window.login;
-    window.login = function() {
+    window.login = async function() {
         if (typeof originalLogin === "function") {
-            originalLogin();
-        }
-        const loggedIn = localStorage.getItem("cinemaLoggedIn");
-        if (loggedIn === "true") {
-            const streamsSection = document.getElementById("reviewsStreamSection");
-            if (streamsSection) streamsSection.style.display = "grid";
+            await originalLogin();
         }
     };
+
+    function autofillMovieDetails(event) {
+        const titleInput = document.getElementById("catalogTitle");
+        const title = titleInput ? titleInput.value.trim() : "";
+        if (!title) {
+            alert("Please enter a Movie Title first before clicking Auto-Fill!");
+            return;
+        }
+
+        const btn = event.currentTarget;
+        const origText = btn.innerText;
+        btn.innerText = "⏳ Fetching details...";
+        btn.disabled = true;
+
+        fetch("/api/autofill_movie", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ title: title })
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.innerText = origText;
+            btn.disabled = false;
+            if (data.success && data.metadata) {
+                const meta = data.metadata;
+                
+                if (meta.title) document.getElementById("catalogTitle").value = meta.title;
+                if (meta.genre) document.getElementById("catalogGenre").value = meta.genre;
+                if (meta.description) document.getElementById("catalogDescription").value = meta.description;
+                if (meta.poster_url) document.getElementById("catalogPosterUrl").value = meta.poster_url;
+                if (meta.trailer_url) document.getElementById("catalogTrailerUrl").value = meta.trailer_url;
+                
+                alert("✨ Movie details autofilled successfully! Description, poster, and trailer have been fetched.");
+            } else {
+                alert("Could not fetch details: " + (data.message || "Movie not found. Please enter details manually."));
+            }
+        })
+        .catch(err => {
+            btn.innerText = origText;
+            btn.disabled = false;
+            console.error("Autofill error:", err);
+            alert("Autofill failed. Check network connection or try again.");
+        });
+    }
+
+    let isAutofilling = false;
+
+    function checkAndTriggerAutoFill() {
+        const titleInput = document.getElementById("catalogTitle");
+        const genreInput = document.getElementById("catalogGenre");
+        const descInput = document.getElementById("catalogDescription");
+        
+        const title = titleInput ? titleInput.value.trim() : "";
+        const genre = genreInput ? genreInput.value.trim() : "";
+        
+        // Only trigger autofill if title is entered, description is empty, and a request is not already in progress
+        if (title && (!descInput || !descInput.value.trim()) && !isAutofilling) {
+            isAutofilling = true;
+            
+            // Subtly show the auto-generating state in the description box label
+            const label = document.getElementById("catalogDescriptionLabel");
+            const originalLabelHtml = label ? label.innerHTML : "Description / Overview *";
+            if (label) {
+                label.innerHTML = 'Description / Overview * <span id="autofill-loading" style="color: #22d3ee; font-size: 11.5px; margin-left: 10px; font-weight: bold;">⏳ Auto-generating plot summary...</span>';
+            }
+            
+            fetch("/api/autofill_movie", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ title: title, genre: genre })
+            })
+            .then(res => res.json())
+            .then(data => {
+                isAutofilling = false;
+                if (label) {
+                    label.innerHTML = originalLabelHtml;
+                }
+                
+                if (data.success && data.metadata) {
+                    const meta = data.metadata;
+                    if (meta.description && descInput && !descInput.value.trim()) {
+                        descInput.value = meta.description;
+                    }
+                    if (meta.genre && genreInput && !genreInput.value.trim()) {
+                        genreInput.value = meta.genre;
+                    }
+                    if (meta.poster_url && !document.getElementById("catalogPosterUrl").value.trim()) {
+                        document.getElementById("catalogPosterUrl").value = meta.poster_url;
+                    }
+                    if (meta.trailer_url && !document.getElementById("catalogTrailerUrl").value.trim()) {
+                        document.getElementById("catalogTrailerUrl").value = meta.trailer_url;
+                    }
+                }
+            })
+            .catch(err => {
+                isAutofilling = false;
+                if (label) {
+                    label.innerHTML = originalLabelHtml;
+                }
+                console.error("Auto-autofill fetch error:", err);
+            });
+        }
+    }
+
+    function loadMovieToEdit() {
+        const select = document.getElementById("editMovieSelect");
+        const selectedOption = select.options[select.selectedIndex];
+        const container = document.getElementById("editorFieldsContainer");
+        
+        if (!selectedOption || !selectedOption.value) {
+            if (container) container.style.display = "none";
+            return;
+        }
+        
+        const movieId = selectedOption.value;
+        const title = selectedOption.getAttribute("data-title") || "";
+        const genre = selectedOption.getAttribute("data-genre") || "";
+        const desc = selectedOption.getAttribute("data-desc") || "";
+        const poster = selectedOption.getAttribute("data-poster") || "";
+        const trailer = selectedOption.getAttribute("data-trailer") || "";
+        
+        document.getElementById("editMovieId").value = movieId;
+        document.getElementById("editTitle").value = title;
+        document.getElementById("editGenre").value = genre;
+        document.getElementById("editDescription").value = desc;
+        document.getElementById("editPosterUrl").value = poster;
+        document.getElementById("editTrailerUrl").value = trailer;
+        
+        if (container) {
+            container.style.display = "grid";
+            container.style.gridTemplateColumns = "1fr 1fr";
+        }
+    }
+
+    function autofillEditMovieDetails(event) {
+        const titleInput = document.getElementById("editTitle");
+        const title = titleInput ? titleInput.value.trim() : "";
+        if (!title) {
+            alert("Please enter a Movie Title first!");
+            return;
+        }
+
+        const btn = event.currentTarget;
+        const origText = btn.innerText;
+        btn.innerText = "⏳ Fetching details...";
+        btn.disabled = true;
+
+        fetch("/api/autofill_movie", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ title: title })
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.innerText = origText;
+            btn.disabled = false;
+            if (data.success && data.metadata) {
+                const meta = data.metadata;
+                
+                if (meta.title) document.getElementById("editTitle").value = meta.title;
+                if (meta.genre) document.getElementById("editGenre").value = meta.genre;
+                if (meta.description) document.getElementById("editDescription").value = meta.description;
+                if (meta.poster_url) document.getElementById("editPosterUrl").value = meta.poster_url;
+                if (meta.trailer_url) document.getElementById("editTrailerUrl").value = meta.trailer_url;
+                
+                alert("✨ Movie details updated from online sources! Description, poster, and trailer have been fetched.");
+            } else {
+                alert("Could not fetch details: " + (data.message || "Movie not found. Please enter details manually."));
+            }
+        })
+        .catch(err => {
+            btn.innerText = origText;
+            btn.disabled = false;
+            console.error("Autofill error:", err);
+            alert("Autofill failed. Check network connection or try again.");
+        });
+    }
+
+    function submitUpdateCatalogMovie() {
+        const movieId = document.getElementById("editMovieId").value;
+        const title = document.getElementById("editTitle").value.trim();
+        const genre = document.getElementById("editGenre").value.trim();
+        const description = document.getElementById("editDescription").value.trim();
+        const posterUrl = document.getElementById("editPosterUrl").value.trim();
+        const trailerUrl = document.getElementById("editTrailerUrl").value.trim();
+
+        if (!movieId || !title || !genre || !description || !trailerUrl) {
+            alert("Please fill in all required fields marked with *!");
+            return;
+        }
+
+        fetch("/api/update_catalog_movie", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                id: movieId,
+                title: title,
+                genre: genre,
+                description: description,
+                poster_url: posterUrl,
+                trailer_url: trailerUrl
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert("🎉 Movie details successfully updated!");
+                window.location.reload();
+            } else {
+                alert("Error: " + data.message);
+            }
+        })
+        .catch(err => {
+            console.error("Update movie catalog error:", err);
+            alert("Connection error. Could not save changes.");
+        });
+    }
+
+    function startFormVoiceInput(fieldId) {
+        const inputField = document.getElementById(fieldId);
+        if (!inputField) return;
+
+        // Check if Web Speech API is supported
+        if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
+            alert("Voice recognition is not supported in this browser. Please use Google Chrome.");
+            return;
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const rec = new SpeechRecognition();
+        
+        // Match language selection if available in chatbot, fallback to English
+        const langDropdown = document.getElementById("languageDropdown");
+        const currentLang = langDropdown ? langDropdown.value : "en";
+        if (currentLang === "es") {
+            rec.lang = "es-ES";
+        } else if (currentLang === "fr") {
+            rec.lang = "fr-FR";
+        } else if (currentLang === "de") {
+            rec.lang = "de-DE";
+        } else {
+            rec.lang = "en-US";
+        }
+
+        rec.continuous = false;
+        rec.interimResults = false;
+
+        // Find the mic button inside the relative wrapper
+        const button = inputField.nextElementSibling;
+        const originalText = button ? button.innerHTML : "🎤";
+        if (button) {
+            button.innerHTML = "🔴"; // Red recording state
+            button.style.color = "#ff3c3c";
+        }
+        
+        rec.onstart = () => {
+            console.log("Form Voice recognition started for:", fieldId);
+        };
+
+        rec.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            
+            // Clean transcription punctuation
+            let cleanedText = transcript.trim();
+            if (cleanedText.endsWith(".")) {
+                cleanedText = cleanedText.slice(0, -1);
+            }
+            
+            inputField.value = cleanedText;
+            
+            // Auto-trigger the blur logic for title field to launch background autofill scraper!
+            if (fieldId === "catalogTitle") {
+                inputField.focus();
+                setTimeout(() => {
+                    inputField.blur();
+                }, 300);
+            }
+        };
+
+        rec.onerror = (e) => {
+            console.error("Form Speech recognition error:", e.error);
+            if (e.error === "not-allowed") {
+                alert("🎤 Microphone permission denied. Please allow microphone access in your browser settings.");
+            } else if (e.error !== "no-speech") {
+                alert("🎤 Voice recognition failed: " + e.error);
+            }
+        };
+
+        rec.onend = () => {
+            if (button) {
+                button.innerHTML = originalText;
+                button.style.color = "#94a3b8";
+            }
+            console.log("Form Voice recognition ended for:", fieldId);
+        };
+
+        rec.start();
+    }
+
+    function adminLookupBooking() {
+        const ticketCode = document.getElementById("adminLookupTicketCode").value.trim().toUpperCase();
+        if (!ticketCode) {
+            alert("Please enter a ticket code first.");
+            return;
+        }
+
+        const resultDiv = document.getElementById("adminLookupResult");
+        resultDiv.style.display = "none";
+
+        fetch("/api/verify_booking", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ ticket_code: ticketCode })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const details = data.details;
+                document.getElementById("resMovieTitle").textContent = details.movie_title || "Unknown";
+                document.getElementById("resCreatedAt").textContent = details.created_at || "N/A";
+                
+                const statusCell = document.getElementById("resStatus");
+                statusCell.textContent = details.status.toUpperCase();
+                if (details.status === "cancelled") {
+                    statusCell.style.color = "#ef4444";
+                    document.getElementById("adminCancelBookingBtn").disabled = true;
+                    document.getElementById("adminCancelBookingBtn").textContent = "Already Voided";
+                    document.getElementById("adminCancelBookingBtn").style.opacity = "0.5";
+                } else {
+                    statusCell.style.color = "#4ade80";
+                    document.getElementById("adminCancelBookingBtn").disabled = false;
+                    document.getElementById("adminCancelBookingBtn").textContent = "Void & Refund Booking";
+                    document.getElementById("adminCancelBookingBtn").style.opacity = "1";
+                }
+
+                resultDiv.style.display = "block";
+            } else {
+                alert("Lookup failed: " + data.message);
+            }
+        })
+        .catch(err => {
+            console.error("Lookup error:", err);
+            alert("Connection error. Could not verify booking.");
+        });
+    }
+
+    function adminCancelCurrentBooking() {
+        const ticketCode = document.getElementById("adminLookupTicketCode").value.trim().toUpperCase();
+        if (!ticketCode) return;
+
+        if (!confirm("Are you sure you want to cancel and refund this booking? This action is irreversible.")) {
+            return;
+        }
+
+        const cancelBtn = document.getElementById("adminCancelBookingBtn");
+        cancelBtn.textContent = "Voiding...";
+        cancelBtn.disabled = true;
+
+        fetch("/api/cancel_booking", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ ticket_code: ticketCode })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert("Booking successfully voided and refunded! ❌");
+                adminLookupBooking(); // Reload details to reflect status change
+            } else {
+                alert("Cancellation failed: " + data.message);
+                cancelBtn.textContent = "Void & Refund Booking";
+                cancelBtn.disabled = false;
+            }
+        })
+        .catch(err => {
+            console.error("Cancellation error:", err);
+            alert("Connection error. Could not void booking.");
+            cancelBtn.textContent = "Void & Refund Booking";
+            cancelBtn.disabled = false;
+        });
+    }
 </script>
 {% endblock %}

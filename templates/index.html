@@ -190,7 +190,100 @@
 </div>
 
 <!-- =========================
-   JS (MODAL CONTROL)
+   PUBLIC PEER EVALUATION, REVIEWS & CLASSMATE FEEDBACK SECTION
+========================= -->
+<div style="max-width: 1100px; margin: 0 auto 50px auto; padding: 0 20px; box-sizing: border-box;">
+    
+    <!-- CLASSMATE FEEDBACK EXPANDER SECTION -->
+    <div id="feedbackSection" style="width: 100%; margin: 40px auto 10px auto; padding: 0; box-sizing: border-box;">
+        <details style="background: rgba(30, 41, 59, 0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: 0.3s; backdrop-filter: blur(12px);" open>
+            <summary style="cursor: pointer; padding: 18px 24px; font-size: 16px; color: var(--accent); font-weight: 700; list-style: none; display: flex; justify-content: space-between; align-items: center; user-select: none; outline: none; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <span style="display: flex; align-items: center; gap: 8px;">💬 Project Review & Classmate Feedback</span>
+                <span style="font-size: 11px; opacity: 0.7; background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 12px; font-weight: normal; color: white;">Expander panel</span>
+            </summary>
+            <div style="padding: 24px;">
+                <p style="color: #94a3b8; font-size: 14px; margin-top: 0; margin-bottom: 15px;">Leave feedback or review notes regarding the Cinema Analytics dashboard, multi-turn AI features, and user database models.</p>
+                <textarea id="feedbackText" placeholder="Enter your comments, reviews, or project feedback here..." style="width: 100%; height: 100px; padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: #0f172a; color: white; font-size: 14px; outline: none; resize: none; margin-bottom: 15px; font-family: inherit; box-sizing: border-box; line-height: 1.5;"></textarea>
+                <button onclick="submitFeedback()" style="background: var(--accent); color: black; font-weight: bold; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-size: 13.5px; transition: 0.3s; box-shadow: 0 4px 12px rgba(255, 60, 60, 0.25);">Submit Feedback</button>
+            </div>
+        </details>
+    </div>
+
+    <!-- REAL-TIME REVIEWS & FEEDBACK STREAM -->
+    <div id="reviewsStreamSection" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 30px; margin-top: 40px; margin-bottom: 20px;">
+        
+        <!-- COLUMN 1: CLASSMATE FEEDBACK -->
+        <div style="background: rgba(15, 23, 42, 0.55); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); height: fit-content; backdrop-filter: blur(12px);">
+            <h3 style="font-size: 18px; font-weight: 800; color: var(--accent); margin-top: 0; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                💬 Classmate Project Reviews
+            </h3>
+            <p style="color: #94a3b8; font-size: 13.5px; margin-bottom: 20px; line-height: 1.5;">Review logs left by classmates and peer evaluators during presentations.</p>
+            
+            <div id="classmateFeedbackList" style="display: flex; flex-direction: column; gap: 15px; max-height: 400px; overflow-y: auto; padding-right: 5px;">
+                {% if feedbacks %}
+                    {% for f in feedbacks %}
+                    <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="color: #ffffff; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">
+                                👤 {{ f.username }}
+                            </span>
+                            <span style="color: #64748b; font-size: 11px;">
+                                {{ f.created_at }}
+                            </span>
+                        </div>
+                        <p style="color: #cbd5e1; font-size: 13.5px; line-height: 1.5; margin: 0; word-break: break-word;">{{ f.feedback }}</p>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="text-align: center; color: #64748b; padding: 40px 0; font-size: 14px;">
+                        No classmate reviews submitted yet. Use the expander card below to submit feedback!
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- COLUMN 2: CUSTOMER MOVIE REVIEWS -->
+        <div style="background: rgba(15, 23, 42, 0.55); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); height: fit-content; backdrop-filter: blur(12px);">
+            <h3 style="font-size: 18px; font-weight: 800; color: #ff3c3c; margin-top: 0; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                ⭐ Recent Movie Reviews
+            </h3>
+            <p style="color: #94a3b8; font-size: 13.5px; margin-bottom: 20px; line-height: 1.5;">Live reviews and star ratings submitted by customers on catalog movies.</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 15px; max-height: 400px; overflow-y: auto; padding-right: 5px;">
+                {% if movie_reviews %}
+                    {% for r in movie_reviews %}
+                    <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span style="color: #ffffff; font-weight: 700; font-size: 14px;">
+                                ✍️ {{ r.username }}
+                            </span>
+                            <span style="color: #ffb703; font-weight: bold; font-size: 13px;">
+                                {% for i in range(r.rating) %}⭐{% endfor %}
+                            </span>
+                        </div>
+                        <div style="font-size: 11px; color: #ff3c3c; font-weight: bold; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            🎬 Film: {{ r.movie_title or "General" }}
+                        </div>
+                        <p style="color: #cbd5e1; font-size: 13.5px; line-height: 1.5; margin: 0; word-break: break-word;">"{{ r.comment }}"</p>
+                        <div style="color: #64748b; font-size: 10px; margin-top: 8px; text-align: right;">
+                            {{ r.created_at }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="text-align: center; color: #64748b; padding: 40px 0; font-size: 14px;">
+                        No movie reviews found in the database.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+    </div>
+
+</div>
+
+<!-- =========================
+   JS (MODAL CONTROL & FEEDBACK SUBMISSION)
 ========================= -->
 
 <script>
@@ -210,6 +303,38 @@ window.onclick = function(event) {
         }
     });
 };
+
+function submitFeedback() {
+    const feedbackText = document.getElementById("feedbackText").value.trim();
+    if (!feedbackText) {
+        alert("Please enter some feedback comments first!");
+        return;
+    }
+    
+    fetch("/api/classmate_feedback", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            feedback: feedbackText
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert("Thank you! Your feedback has been recorded successfully! 🚀");
+            document.getElementById("feedbackText").value = "";
+            window.location.reload();
+        } else {
+            alert("Error saving feedback: " + data.message);
+        }
+    })
+    .catch(err => {
+        console.error("Feedback submit error:", err);
+        alert("Server connection failed. Could not submit feedback.");
+    });
+}
 
 </script>
 

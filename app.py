@@ -44,11 +44,33 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 def initialize_and_seed_db():
     import sqlite3
     import datetime
+    from werkzeug.security import generate_password_hash
     
     db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "movies.db")
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
     
+    # Create admin credentials table if not exists
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS admin_credentials (
+            username TEXT PRIMARY KEY,
+            password_hash TEXT,
+            reset_code TEXT,
+            reset_expiry TIMESTAMP
+        )
+    """)
+    conn.commit()
+    
+    # Seed default admin credentials if empty
+    cur.execute("SELECT COUNT(*) FROM admin_credentials")
+    if cur.fetchone()[0] == 0:
+        admin_user = os.getenv("ADMIN_USERNAME") or os.getenv("admin_user") or "Admin"
+        admin_pass = os.getenv("ADMIN_PASSWORD") or os.getenv("admin_password") or "Admin.123"
+        hashed = generate_password_hash(admin_pass)
+        cur.execute("INSERT INTO admin_credentials (username, password_hash) VALUES (?, ?)", (admin_user, hashed))
+        conn.commit()
+        print(f"Seeded default admin credentials in database: {admin_user}")
+        
     # 1. Create default user if not exists
     cur.execute("SELECT COUNT(*) FROM users")
     if cur.fetchone()[0] == 0:
@@ -349,6 +371,59 @@ def home():
     db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "movies.db")
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
+    
+    # Ensure classmate_feedback table exists defensively
+    try:
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS classmate_feedback (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT,
+                feedback TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.commit()
+    except Exception as e:
+        print("Error creating classmate_feedback table on home load:", e)
+
+    # Fetch classmate feedbacks
+    feedbacks = []
+    try:
+        cur.execute("SELECT username, feedback, created_at FROM classmate_feedback ORDER BY created_at DESC LIMIT 10")
+        fb_rows = cur.fetchall()
+        for r in fb_rows:
+            feedbacks.append({
+                "username": r[0],
+                "feedback": r[1],
+                "created_at": r[2]
+            })
+    except Exception as fb_err:
+        print("Error fetching classmate feedback for home:", fb_err)
+
+    # Fetch recent movie comments
+    movie_reviews = []
+    try:
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='movie_comments'")
+        if cur.fetchone():
+            cur.execute("""
+                SELECT mc.username, mc.comment, mc.rating, mc.created_at, c.title AS movie_title
+                FROM movie_comments mc
+                LEFT JOIN movie_catalog c ON mc.movie_id = c.id
+                ORDER BY mc.created_at DESC
+                LIMIT 10
+            """)
+            rows = cur.fetchall()
+            for r in rows:
+                movie_reviews.append({
+                    "username": r[0],
+                    "comment": r[1],
+                    "rating": r[2],
+                    "created_at": r[3],
+                    "movie_title": r[4]
+                })
+    except Exception as e:
+        print("Error fetching movie comments on home load:", e)
+
     cur.execute("SELECT DISTINCT title, year, rating, poster_url, trailer_url, note, country FROM movies")
     rows = cur.fetchall()
     conn.close()
@@ -382,6 +457,8 @@ def home():
         "index.html",
         movies=movies,
         banners=banners,
+        feedbacks=feedbacks,
+        movie_reviews=movie_reviews,
         country_to_flag=country_to_flag
     )
 
@@ -704,7 +781,125 @@ def send_ticket_email():
 
 
 # =========================================
+# API VERIFY BOOKING
+# =========================================
+@app.route("/api/verify_booking", methods=["POST"])
+def verify_booking():
+    try:
+        data = request.get_json() or {}
+        ticket_code = data.get("ticket_code")
+        if not ticket_code:
+            return jsonify({"success": False, "message": "Ticket code is required."})
+
+        from movie_storage_sql import get_qr_purchase_details
+        details = get_qr_purchase_details(ticket_code)
+        if not details:
+            return jsonify({"success": False, "message": "No booking found matching code."})
+
+        return jsonify({"success": True, "details": details})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+
+
+# =========================================
+# API CANCEL BOOKING & REFUND
+# =========================================
+@app.route("/api/cancel_booking", methods=["POST"])
+def cancel_booking():
+    try:
+        data = request.get_json() or {}
+        ticket_code = data.get("ticket_code")
+        target_email = data.get("email")
+
+        if not ticket_code:
+            return jsonify({"success": False, "message": "Ticket code is required."})
+
+        from movie_storage_sql import cancel_qr_purchase, get_qr_purchase_details
+        
+        details = get_qr_purchase_details(ticket_code)
+        if not details:
+            return jsonify({"success": False, "message": f"No booking found matching code {ticket_code}."})
+
+        if details.get("status") == "cancelled":
+            return jsonify({"success": False, "message": "This booking is already cancelled."})
+
+        # Process cancellation in SQLite
+        cancel_qr_purchase(ticket_code)
+
+        # Trigger confirmation email if target email is provided
+        if target_email:
+            # Load SMTP settings
+            smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+            smtp_port_raw = os.getenv("SMTP_PORT", "587")
+            try:
+                smtp_port = int(smtp_port_raw)
+            except ValueError:
+                smtp_port = 587
+                
+            smtp_email = os.getenv("SMTP_EMAIL")
+            smtp_password = os.getenv("SMTP_PASSWORD")
+
+            if smtp_email and smtp_password:
+                # Construct email body
+                html_content = f"""
+                <html>
+                  <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #09090e; color: #f3f4f6; padding: 40px 20px; margin: 0;">
+                    <div style="max-width: 480px; margin: 0 auto; background: #14141d; border: 1px solid #232332; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);">
+                      
+                      <!-- Brand Header -->
+                      <div style="background: #ef4444; padding: 24px; text-align: center; border-bottom: 2px dashed #232332;">
+                        <span style="font-size: 12px; font-weight: 800; color: #ffffff; letter-spacing: 2px; text-transform: uppercase;">🍿 TICKET CANCELLED</span>
+                      </div>
+                      
+                      <!-- Movie Details Card -->
+                      <div style="padding: 30px 24px 20px 24px;">
+                        <h2 style="font-size: 20px; font-weight: 900; color: #ffffff; margin: 0 0 16px 0; text-transform: uppercase; letter-spacing: -0.5px; line-height: 1.2;">CANCELLATION CONFIRMED</h2>
+                        <p style="font-size: 13.5px; color: #9ca3af; line-height: 1.6; margin-bottom: 20px;">
+                          Your booking for <strong>{details.get("movie_title", "Movie")}</strong> under ticket code <strong>{ticket_code}</strong> has been successfully cancelled.
+                        </p>
+                        <p style="font-size: 13.5px; color: #9ca3af; line-height: 1.6; margin-bottom: 20px;">
+                          A full refund has been initiated to your original payment method. Please allow 3-5 business days for it to reflect in your account.
+                        </p>
+                      </div>
+                      
+                      <div style="background: #1a1a26; padding: 20px 24px; text-align: center;">
+                        <span style="font-size: 11px; color: #71717a; text-transform: uppercase; letter-spacing: 1px;">Thank you for using Stoplight Cinema</span>
+                      </div>
+                      
+                    </div>
+                  </body>
+                </html>
+                """
+
+                import smtplib
+                from email.mime.multipart import MIMEMultipart
+                from email.mime.text import MIMEText
+
+                msg = MIMEMultipart("alternative")
+                msg["Subject"] = f"❌ Booking Cancelled & Refund Processed: {details.get('movie_title')} ({ticket_code})"
+                msg["From"] = smtp_email
+                msg["To"] = target_email
+
+                text_backup = f"Your booking for {details.get('movie_title')} under code {ticket_code} has been cancelled. A refund is being processed."
+                msg.attach(MIMEText(text_backup, "plain"))
+                msg.attach(MIMEText(html_content, "html"))
+
+                server = smtplib.SMTP(smtp_server, smtp_port)
+                server.starttls()
+                server.login(smtp_email, smtp_password)
+                server.sendmail(smtp_email, target_email, msg.as_string())
+                server.quit()
+                print(f"Cancellation email sent successfully to {target_email} for code {ticket_code}")
+
+        return jsonify({"success": True, "message": "Booking successfully cancelled and refund initiated!"})
+    except Exception as e:
+        print("API CANCELLATION ERROR:", e)
+        return jsonify({"success": False, "message": f"Cancellation error: {str(e)}"})
+
+
+# =========================================
 # REFRESH BANNERS ROUTE
+# =========================================
 # =========================================
 @app.route("/refresh_banners")
 def refresh_banners_route():
@@ -731,7 +926,17 @@ def get_chatbot_movie_context():
         # 2. Fetch user saved movies
         cur.execute("SELECT DISTINCT title, year, rating, poster_url, trailer_url, note FROM movies")
         user_rows = cur.fetchall()
+        
+        # 3. Fetch homepage banner/slider movies
+        cur.execute("SELECT count(name) FROM sqlite_master WHERE type='table' AND name='banner_movies'")
+        if cur.fetchone()[0] == 1:
+            cur.execute("SELECT DISTINCT title, category, release_date, rating, overview, poster_url, banner_url FROM banner_movies")
+            banner_rows = cur.fetchall()
+        else:
+            banner_rows = []
         conn.close()
+        
+        catalog_title_map = {row['title'].lower().strip(): row['id'] for row in catalog_rows}
         
         context = "Available movies in the Cinema Catalog (purchase tickets and watch trailers inline):\n"
         for row in catalog_rows:
@@ -739,7 +944,14 @@ def get_chatbot_movie_context():
             if p_url.startswith("http"):
                 p_url = download_local_poster(row['title'], p_url)
             t_url = get_clean_embed_trailer(row['title'], row['trailer_url'] or "")
-            context += f"- Title: {row['title']} | ID: {row['id']} | Genre: {row['genre']} | Details & Comments Link: /movie/{row['id']} | Purchase Link: /purchase/{row['id']} | Poster URL: {p_url} | Trailer Embed URL: {t_url}\n"
+            
+            # Extract video ID to build standard watch URL
+            watch_url = t_url
+            if "/embed/" in t_url:
+                yt_id = t_url.split("/embed/")[-1].split("?")[0]
+                watch_url = f"https://www.youtube.com/watch?v={yt_id}"
+                
+            context += f"- Title: {row['title']} | ID: {row['id']} | Genre: {row['genre']} | Details & Comments Link: /movie/{row['id']} | Purchase Link: /purchase/{row['id']} | Poster URL: {p_url} | Trailer Embed URL: {t_url} | Trailer Watch URL: {watch_url}\n"
             
         context += "\nUser's Personal Saved Movies Collection:\n"
         for row in user_rows:
@@ -747,9 +959,29 @@ def get_chatbot_movie_context():
             if p_url.startswith("http"):
                 p_url = download_local_poster(row['title'], p_url)
             t_url = get_clean_embed_trailer(row['title'], row['trailer_url'] or "")
-            context += f"- Title: {row['title']} | Year: {row['year']} | Rating: {row['rating']} | User Note: {row['note']} | Poster URL: {p_url} | Trailer Embed URL: {t_url}\n"
+            
+            # Extract video ID to build standard watch URL
+            watch_url = t_url
+            if "/embed/" in t_url:
+                yt_id = t_url.split("/embed/")[-1].split("?")[0]
+                watch_url = f"https://www.youtube.com/watch?v={yt_id}"
+                
+            context += f"- Title: {row['title']} | Year: {row['year']} | Rating: {row['rating']} | User Note: {row['note']} | Poster URL: {p_url} | Trailer Embed URL: {t_url} | Trailer Watch URL: {watch_url}\n"
+            
+        context += "\nMovies Currently Featured in the Homepage Slider Banner (Carousel):\n"
+        for row in banner_rows:
+            p_url = row['poster_url'] or "/static/image/cinema_luxury.png"
+            title_lower = row['title'].lower().strip()
+            cat_id = catalog_title_map.get(title_lower, None)
+            
+            friendly_category = row['category'].replace('_', ' ').title()
+            details_link = f"/movie/{cat_id}" if cat_id else "/catalog"
+            purchase_link = f"/purchase/{cat_id}" if cat_id else "/catalog"
+            
+            context += f"- Title: {row['title']} | Slider Category: {friendly_category} | Release Date: {row['release_date']} | Rating: {row['rating']} | Overview: {row['overview']} | Poster URL: {p_url} | Details Link: {details_link} | Purchase Link: {purchase_link}\n"
             
         return context
+
     except Exception as e:
         print("Error building chat context:", e)
         return "Movie database is currently empty."
@@ -759,27 +991,25 @@ TRAILER_CACHE = {}
 
 def get_clean_embed_trailer(title, default_url):
     """
-    Tries to fetch the official working YouTube trailer key from TMDB.
-    Falls back to the database default_url if TMDB fails or doesn't find one.
-    Guarantees the output is ALWAYS formatted as a clean YouTube embed URL
-    (e.g., https://www.youtube.com/embed/<key>), never a standard watch link.
+    Cleans the trailer URL from the database and returns it as a YouTube embed URL.
+    Does NOT connect to external APIs like TMDB. If no trailer is defined, returns empty string.
     """
     global TRAILER_CACHE
     cache_key = (title, default_url)
     if cache_key in TRAILER_CACHE:
         return TRAILER_CACHE[cache_key]
 
-    import requests
-    import urllib.parse
+    if not default_url or not default_url.strip():
+        return ""
+
+    url = default_url.strip()
     
-    def extract_yt_key(url):
-        if not url:
+    def extract_yt_key(url_str):
+        if not url_str:
             return None
-        url = url.strip()
-        
         # Check standard query string watch?v=
-        if "v=" in url:
-            parts = url.split("v=")
+        if "v=" in url_str:
+            parts = url_str.split("v=")
             for part in parts[1:]:
                 candidate = part.split("&")[0].split("?")[0].split("/")[0]
                 if len(candidate) == 11:
@@ -787,64 +1017,45 @@ def get_clean_embed_trailer(title, default_url):
                     
         # Check path elements like embed/ or v/ or watch/
         for marker in ["embed/", "v/", "watch/", "shorts/", "youtu.be/"]:
-            if marker in url:
-                parts = url.split(marker)
+            if marker in url_str:
+                parts = url_str.split(marker)
                 if len(parts) > 1:
                     candidate = parts[1].split("?")[0].split("&")[0].split("/")[0]
                     if len(candidate) == 11:
                         return candidate
                         
-        if len(url) == 11 and "/" not in url:
-            return url
+        if len(url_str) == 11 and "/" not in url_str:
+            return url_str
             
         import re
-        match = re.search(r'(?:v=|embed/|v/|shorts/|youtu\.be/|/)([a-zA-Z0-9_-]{11})(?:\?|&|$|/)', url)
+        match = re.search(r'(?:v=|embed/|v/|shorts/|youtu\.be/|/)([a-zA-Z0-9_-]{11})(?:\?|&|$|/)', url_str)
         if match:
             return match.group(1)
             
-        match_end = re.search(r'([a-zA-Z0-9_-]{11})(?:\?|&|$)', url)
-        if match_end:
-            return match_end.group(1)
-            
         return None
 
-    # Try fetching from TMDB first
-    try:
-        api_key = os.getenv("TMDB_API_KEY")
-        if api_key:
-            search_url = f"https://api.themoviedb.org/3/search/movie?api_key={api_key}&query={urllib.parse.quote(title)}"
-            res = requests.get(search_url, timeout=4).json()
-            results = res.get("results", [])
-            if results:
-                tmdb_id = results[0].get("id")
-                video_url = f"https://api.themoviedb.org/3/movie/{tmdb_id}/videos?api_key={api_key}"
-                video_res = requests.get(video_url, timeout=4).json()
-                for v in video_res.get("results", []):
-                    if v.get("site") == "YouTube" and v.get("type") == "Trailer" and v.get("key"):
-                        result = f"https://www.youtube.com/embed/{v['key']}"
-                        TRAILER_CACHE[cache_key] = result
-                        return result
-    except Exception as e:
-        print(f"Error fetching TMDB trailer for {title}:", e)
+    key = extract_yt_key(url)
+    if key:
+        result = f"https://www.youtube.com/embed/{key}"
+        TRAILER_CACHE[cache_key] = result
+        return result
+        
+    if "http" in url:
+        TRAILER_CACHE[cache_key] = url
+        return url
 
-    # Fallback to the database default_url if TMDB fails or doesn't find one
-    if default_url:
-        key = extract_yt_key(default_url)
-        if key:
-            result = f"https://www.youtube.com/embed/{key}"
-            TRAILER_CACHE[cache_key] = result
-            return result
-        if "http" in default_url:
-            TRAILER_CACHE[cache_key] = default_url
-            return default_url
-
-    # Defensive default
-    result = "https://www.youtube.com/embed/YoHD9XEInc0"
-    TRAILER_CACHE[cache_key] = result
-    return result
+    return ""
 
 
 def post_process_chat_reply(reply, user_message):
+    """
+    Applies programmatic filters and fail-safe replacements to the chatbot's response.
+    Specifically:
+      1. Cleans up raw YouTube hyperlinks, Markdown links, and HTML anchors to standardise video embeds.
+      2. Replaces placeholders (like '<trailer_embed_url>', '<poster_url>', '<movie_id>') with actual database values.
+      3. Automatically injects the inline iframe player if the user asked for a trailer but the LLM did not output it.
+      4. Automatically redirects to the local movie detail page (/movie/id) if no trailer URL is defined in the database.
+    """
     import sqlite3
     import re
     
@@ -860,6 +1071,14 @@ def post_process_chat_reply(reply, user_message):
     cur.execute("SELECT DISTINCT title, poster_url, trailer_url FROM movies")
     personal_movies = cur.fetchall()
     
+    # Fetch all movies from banner_movies if the table exists
+    cur.execute("SELECT count(name) FROM sqlite_master WHERE type='table' AND name='banner_movies'")
+    if cur.fetchone()[0] == 1:
+        cur.execute("SELECT DISTINCT title, poster_url FROM banner_movies")
+        banner_db_movies = cur.fetchall()
+    else:
+        banner_db_movies = []
+        
     conn.close()
     
     # Build dictionaries
@@ -891,67 +1110,24 @@ def post_process_chat_reply(reply, user_message):
                 "poster_url": p_url,
                 "trailer_url": get_clean_embed_trailer(title, t_url)
             }
-            
-    # 1. Post-process placeholders
-    matched_movie = None
-    user_msg_lower = user_message.lower()
-    reply_lower = reply.lower()
-    
-    # Find matching title
-    # Sort keys by length descending to match longer titles first
-    sorted_titles = sorted(movie_data.keys(), key=len, reverse=True)
-    for title_key in sorted_titles:
-        if title_key in user_msg_lower or title_key in reply_lower:
-            matched_movie = movie_data[title_key]
-            break
-            
-    if matched_movie:
-        p_url = matched_movie["poster_url"]
-        t_url = matched_movie["trailer_url"]
-        
-        # Replace literal placeholders
-        placeholders = [
-            "[Poster URL from the context]",
-            "<poster_url>",
-            "poster_url",
-            "[poster_url]",
-            "<poster_path>",
-            "[poster_path]",
-            "poster_path"
-        ]
-        for ph in placeholders:
-            reply = reply.replace(ph, p_url)
-            
-        trailer_placeholders = [
-            "<trailer_embed_url>",
-            "[Trailer Embed URL]",
-            "trailer_embed_url",
-            "<trailer_url>",
-            "[trailer_url]",
-            "trailer_url"
-        ]
-        for ph in trailer_placeholders:
-            reply = reply.replace(ph, t_url)
-            
-    # 2. Programmatic injection if user asked for a poster and it's missing in reply
-    asked_for_poster = any(k in user_msg_lower for k in ["poster", "cover", "image", "picture", "photo", "cover art"])
-    has_img_tag = "<img" in reply
-    
-    if asked_for_poster and not has_img_tag and matched_movie:
-        p_url = matched_movie["poster_url"]
-        img_html = f'<br><img src="{p_url}" alt="{matched_movie["title"]}" class="chat-movie-poster" style="width:120px; border-radius:10px; margin: 12px auto; display:block; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.2s;">'
-        reply += img_html
-        
-    # 3. Programmatic injection if user asked for a trailer/video and it's missing in reply
-    asked_for_trailer = any(k in user_msg_lower for k in ["trailer", "video", "play", "watch", "stream"])
-    has_iframe_tag = "<iframe" in reply
-    
-    if asked_for_trailer and not has_iframe_tag and matched_movie and matched_movie["trailer_url"]:
-        t_url = matched_movie["trailer_url"]
-        iframe_html = f'<br><div style="margin-top:8px; border-radius:10px; overflow:hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.4);"><iframe width="100%" height="200" src="{t_url}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>'
-        reply += iframe_html
 
-    # 4. Clean up any remaining raw/markdown/html YouTube links to prevent direct redirects
+    for row in banner_db_movies:
+        title = row[0]
+        p_url = row[1] or "/static/image/cinema_luxury.png"
+        if p_url.startswith("http"):
+            p_url = download_local_poster(title, p_url)
+        # If not in catalog or personal, add to dict
+        if title.lower() not in movie_data:
+            movie_data[title.lower()] = {
+                "title": title,
+                "id": None,
+                "poster_url": p_url,
+                "trailer_url": ""
+            }
+
+            
+    # 1. Clean up any remaining raw/markdown/html YouTube links first
+    # This keeps our injected UI safe from the filter.
     def clean_youtube_links(text):
         def extract_id(url):
             match = re.search(r'(?:v=|embed/|v/|shorts/|youtu\.be/|/)([a-zA-Z0-9_-]{11})', url)
@@ -988,6 +1164,80 @@ def post_process_chat_reply(reply, user_message):
         return text
 
     reply = clean_youtube_links(reply)
+
+    # 2. Post-process placeholders
+    matched_movie = None
+    user_msg_lower = user_message.lower()
+    reply_lower = reply.lower()
+    
+    # Find matching title
+    sorted_titles = sorted(movie_data.keys(), key=len, reverse=True)
+    for title_key in sorted_titles:
+        if title_key in user_msg_lower or title_key in reply_lower:
+            matched_movie = movie_data[title_key]
+            break
+            
+    if matched_movie:
+        p_url = matched_movie["poster_url"]
+        t_url = matched_movie["trailer_url"]
+        
+        # Replace literal poster placeholders
+        placeholders = [
+            "[Poster URL from the context]",
+            "<poster_url>",
+            "poster_url",
+            "[poster_url]",
+            "<poster_path>",
+            "[poster_path]",
+            "poster_path"
+        ]
+        for ph in placeholders:
+            reply = reply.replace(ph, p_url)
+            
+        # Replace trailer embed placeholders
+        trailer_placeholders = [
+            "<trailer_embed_url>",
+            "[Trailer Embed URL]",
+            "trailer_embed_url",
+            "<trailer_url>",
+            "[trailer_url]",
+            "trailer_url"
+        ]
+        for ph in trailer_placeholders:
+            reply = reply.replace(ph, t_url)
+            
+        # Replace movie id placeholders
+        id_placeholders = [
+            "<movie_id>",
+            "[Movie ID]",
+            "movie_id"
+        ]
+        if matched_movie["id"] is not None:
+            for ph in id_placeholders:
+                reply = reply.replace(ph, str(matched_movie["id"]))
+            
+    # 3. Programmatic injection if user asked for a poster and it's missing in reply
+    asked_for_poster = any(k in user_msg_lower for k in ["poster", "cover", "image", "picture", "photo", "cover art"])
+    has_img_tag = "<img" in reply
+    
+    if asked_for_poster and not has_img_tag and matched_movie:
+        p_url = matched_movie["poster_url"]
+        img_html = f'<br><img src="{p_url}" alt="{matched_movie["title"]}" class="chat-movie-poster" style="width:120px; border-radius:10px; margin: 12px auto; display:block; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.2s;">'
+        reply += img_html
+        
+    # 4. Programmatic injection if user asked for a trailer/video and it's missing in reply
+    asked_for_trailer = any(k in user_msg_lower for k in ["trailer", "video", "play", "watch", "stream"])
+    has_iframe_tag = "<iframe" in reply
+    
+    if asked_for_trailer and not has_iframe_tag and matched_movie:
+        t_url = matched_movie["trailer_url"]
+        if t_url:
+            iframe_html = f'<br><div style="margin-top:8px; border-radius:10px; overflow:hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.4);"><iframe width="100%" height="200" src="{t_url}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>'
+            reply += iframe_html
+        elif matched_movie["id"]:
+            m_id = matched_movie["id"]
+            fallback_html = f'<br><a href="/movie/{m_id}" class="chat-action-btn" style="display:inline-block; background:#ff3c3c; color:#fff; padding:8px 16px; border-radius:8px; font-weight:bold; text-decoration:none; margin-top:8px; font-size:12px; box-shadow: 0 4px 12px rgba(255, 60, 60, 0.25);">🔍 View Details & Showtimes</a>'
+            reply += fallback_html
         
     return reply
 
@@ -995,25 +1245,52 @@ def post_process_chat_reply(reply, user_message):
 def detect_language(text):
     """
     Detects language of input text (supporting English, German, French, Spanish).
-    Uses langdetect library with a robust stopword-based fallback.
+    Prioritizes explicit language switching cues, then uses langdetect, and falls back to stopwords.
     """
     default_lang = "en"
     if not text or not text.strip():
         return default_lang
 
     text_clean = text.strip()
-    
-    # 1. Attempt langdetect detection
+    text_lower = text_clean.lower()
+
+    # 1. Explicit language request cues override (e.g. "explain in German", "in Spanish", etc.)
+    lang_cues = {
+        "de": ["german", "deutsch", "allemand", "auf deutsch", "in deutsch", "sprich deutsch", "schreib auf deutsch", "antworten auf deutsch", "erkläre auf deutsch", "erkläre in deutsch"],
+        "es": ["spanish", "español", "espanol", "castellano", "en español", "habla español", "escribe en español", "responder en español", "explica en español"],
+        "fr": ["french", "français", "francais", "en français", "parle français", "écris en français", "répondre en français", "explique en français"],
+        "it": ["italian", "italiano", "en italiano", "in italian", "parla italiano", "scrivi in italiano", "rispondi in italiano", "spiega in italiano"],
+        "pt": ["portuguese", "português", "portugues", "em português", "fala português", "escreve em português", "responde em português", "explica em português"],
+        "nl": ["dutch", "nederlands", "in het nederlands", "spreek nederlands", "schrijf in het nederlands", "reageer in het nederlands", "leg uit in het nederlands"],
+        "ru": ["russian", "русский", "на русском", "говори по-русски", "пиши по-русски", "отвечай по-русски", "объясни на русском"],
+        "zh": ["chinese", "中文", "用中文", "说中文", "写中文", "回答中文", "用中文解释"],
+        "ja": ["japanese", "日本語", "で日本語", "日本語で話す", "日本語で書く", "日本語で答える", "日本語で説明する"],
+        "en": ["english", "inglés", "anglais", "in english", "speak english", "write in english", "respond in english", "explain in english"]
+    }
+
+    for lang_code, keywords in lang_cues.items():
+        if any(f"in {kw}" in text_lower or f"en {kw}" in text_lower or f"auf {kw}" in text_lower or f"em {kw}" in text_lower or f"explain in {kw}" in text_lower or f"explicar en {kw}" in text_lower or f"expliquer en {kw}" in text_lower or f"на {kw}" in text_lower or f"用 {kw}" in text_lower or f"de{kw}" in text_lower or f"using {kw}" in text_lower or f"use {kw}" in text_lower for kw in keywords):
+            return lang_code
+        if any(f"speak {kw}" in text_lower or f"write in {kw}" in text_lower or f"respond in {kw}" in text_lower or f"say in {kw}" in text_lower or f"talk in {kw}" in text_lower for kw in keywords):
+            return lang_code
+        # Local direct triggers like "parle français"
+        if lang_code in ["de", "es", "fr", "it", "pt", "ru", "zh", "ja"]:
+            matching_kws = [kw for kw in keywords if len(kw) > 5 and kw in text_lower]
+            if matching_kws:
+                # Only trigger if user explicitly says a long keyword like "italiano" or "português" in context
+                if any(any(phrase in text_lower for phrase in [f"speak {k}", f"write {k}", f"respond {k}", f"explain {k}", f"in {k}", f"en {k}", f"auf {k}", f"em {k}"]) for k in matching_kws):
+                    return lang_code
+
+    # 2. Attempt langdetect detection (supporting any 2-character ISO language code)
     try:
         from langdetect import detect
         detected = detect(text_clean)
-        if detected in ['en', 'de', 'fr', 'es']:
+        if detected and len(detected) == 2:
             return detected
     except Exception as e:
         print("[Language Detection] langdetect error/missing:", e)
 
-    # 2. Heuristics fallback (stopword count)
-    text_lower = text_clean.lower()
+    # 3. Heuristics fallback (stopword count)
     import re
     words = set(re.findall(r'\b\w+\b', text_lower))
 
@@ -1036,6 +1313,7 @@ def detect_language(text):
 
     return default_lang
 
+
 # =========================================
 # CHAT
 # =========================================
@@ -1045,24 +1323,57 @@ def chat():
     data = request.get_json() or {}
     user_message = data.get("message", "")
     client_history = data.get("history", [])
+    selected_model = data.get("model", "gpt-4.1-mini")
 
-    # Get rich movie metadata from database
-    movie_context = get_chatbot_movie_context()
+    # Fallback/validation: if it's not a known or supported model, default to gpt-4o-mini
+    if selected_model not in ["gpt-4o-mini", "gpt-4.1-mini", "gpt-5-mini"]:
+        selected_model = "gpt-4o-mini"
 
-    # Automatically detect the user's message language on the backend
-    detected_lang = detect_language(user_message)
-    lang_names = {
-        "en": "English",
-        "de": "German",
-        "fr": "French",
-        "es": "Spanish"
-    }
-    target_lang = lang_names.get(detected_lang, "English")
+    # Default detected language in case language detection fails before target_lang is defined
+    detected_lang = "en"
 
-    system_prompt = f"""You are CinemaBot 🎬. You MUST respond in {target_lang} because the user's message is written/spoken in {target_lang}. Always reply in the same language.
+    try:
+        # Get rich movie metadata from database
+        movie_context = get_chatbot_movie_context()
+
+        # Automatically detect the user's message language on the backend
+        detected_lang = detect_language(user_message)
+        lang_names = {
+            "en": "English",
+            "de": "German",
+            "fr": "French",
+            "es": "Spanish",
+            "it": "Italian",
+            "pt": "Portuguese",
+            "nl": "Dutch",
+            "ru": "Russian",
+            "zh": "Chinese",
+            "ja": "Japanese",
+            "ko": "Korean",
+            "ar": "Arabic",
+            "tr": "Turkish",
+            "pl": "Polish"
+        }
+        target_lang = lang_names.get(detected_lang, detected_lang.upper())
+
+        system_prompt = f"""You are CinemaBot 🎬. You MUST respond in {target_lang} because the user's message is written/spoken in {target_lang}.
+
+LANGUAGE FLEXIBILITY RULE:
+If the user explicitly requests you to switch languages or speak/write in a specific language (for example: "Explain this in German", "respond in Spanish", "write in French", "write in English"), you MUST prioritize that instruction and reply in the requested language, regardless of the default/detected language of the prompt. Always ensure correct grammar, spelling, and vocabulary for the language you are responding in.
+
+CONVERSATIONAL ENGAGEMENT & DIALOGUE CONTINUATION RULE:
+You MUST NEVER end a turn with a passive statement, just a raw HTML link/image, or empty dialogue. After you have answered the user's request, displayed a poster, embedded a trailer, or handled a booking, you must ALWAYS actively engage the user by asking a helpful follow-up question in the same language to keep the conversation flowing. For example:
+- English: "Would you like me to show you the trailer for this movie?" or "Should we proceed to book tickets for this film?" or "Is there anything else I can assist you with?"
+- German: "Möchten Sie, dass ich Ihnen den Trailer zu diesem Film zeige?" or "Sollen wir mit der Ticketbuchung für diesen Film fortfahren?" or "Kann ich Ihnen sonst noch bei etwas behilflich sein?"
+- Spanish: "¿Le gustaría que le muestre el tráiler de esta película?" or "¿Procedemos a reservar las entradas?" or "¿Hay algo más en lo que pueda ayudarle hoy?"
+- French: "Souhaitez-vous que je vous montre la bande-annonce de ce film ?" or "Voulez-vous procéder à la réservation des billets ?" or "Puis-je vous aider avec autre chose aujourd'hui ?"
+Keep the conversation active, polite, friendly, and helpful. Do not leave the user hanging.
 
 GERMAN LANGUAGE DIRECTIVE (FORMAL ADDRESS / HÖFLICHKEITSFORM):
 When responding in German, you must ALWAYS use the formal address "Sie" (capitalized), along with its related formal pronouns ("Ihr", "Ihre", "Ihnen", etc.). NEVER use the informal "du", "dein", or "ihr". Keep your tone polite, respectful, professional, and formal.
+
+LIST READING & SPEECH SYNTHESIS (TTS) RULE:
+Please read the list items by saying the number followed directly by the text, without adding words like "point" (e.g., do not say "one point" when reading a list item like "1. [item]"). Format and phrase your list responses so that text-to-speech engines do not pronounce punctuation as the word "point".
 
 You have access to the movie catalog and the user's personal collection. Use this context to answer questions accurately!
 {movie_context}
@@ -1077,20 +1388,64 @@ CRITICAL FORMATTING INSTRUCTIONS FOR POSTERS & TRAILERS:
    - Do NOT wrap this <img> tag in any <a> (anchor) tag that redirects to the purchase page or the image file. This prevents the user from being redirected away from their active chatbot conversation.
 2. If the user asks to see a trailer, watch a video, or play a trailer, EMBED the YouTube video directly inside the chat so they can watch it inline! Use raw HTML iframe tags:
    <div style='margin-top:8px; border-radius:10px; overflow:hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.4);'><iframe width='100%' height='200' src='<trailer_embed_url>' frameborder='0' allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture' allowfullscreen></iframe></div>
+   If no trailer URL is available in the context (it is empty), you MUST instead show a button link pointing to the movie details page in our local database:
+   <a href='/movie/<movie_id>' class='chat-action-btn' style='display:inline-block; background:#ff3c3c; color:#fff; padding:8px 16px; border-radius:8px; font-weight:bold; text-decoration:none; margin-top:8px; font-size:12px; box-shadow: 0 4px 12px rgba(255, 60, 60, 0.25);'>🔍 View Details & Showtimes</a>
 3. Always make action links and buttons beautifully styled HTML tags rather than plain text or markdown links. For example, to buy tickets or view details:
-    <a href='/movie/<movie_id>' class='chat-action-btn' style='display:inline-block; background:#ff3c3c; color:#fff; padding:8px 16px; border-radius:8px; font-weight:bold; text-decoration:none; margin-top:8px; font-size:12px; box-shadow: 0 4px 12px rgba(255, 60, 60, 0.2);'>🔍 View Details & Reviews</a> <a href='/purchase/<movie_id>' class='chat-action-btn' style='display:inline-block; background:#06b6d4; color:#000; padding:8px 16px; border-radius:8px; font-weight:bold; text-decoration:none; margin-top:8px; font-size:12px; margin-left:6px; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);'>🍿 Purchase Tickets</a>
+     <a href='/movie/<movie_id>' class='chat-action-btn' style='display:inline-block; background:#ff3c3c; color:#fff; padding:8px 16px; border-radius:8px; font-weight:bold; text-decoration:none; margin-top:8px; font-size:12px; box-shadow: 0 4px 12px rgba(255, 60, 60, 0.25);'>🔍 View Details & Reviews</a> <a href='/purchase/<movie_id>' class='chat-action-btn' style='display:inline-block; background:#06b6d4; color:#000; padding:8px 16px; border-radius:8px; font-weight:bold; text-decoration:none; margin-top:8px; font-size:12px; margin-left:6px; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.25);'>🍿 Purchase Tickets</a>
 4. If a movie doesn't have a poster in the database, use '/static/image/cinema_luxury.png' as a high-fidelity fallback.
+
+INTEGRATION & NAVIGATION INSTRUCTIONS:
+You are fully connected to and integrated with the Stoplight Cinema Portal web application. When users ask about the dashboard, cinema portal, analytics, or cinema map, guide them using these exact instructions, links, or custom action buttons:
+1. Cinema Portal: Provide a link to `/catalog` or styled button:
+   <a href='/catalog' class='chat-action-btn' style='display:inline-block; background:#ff3c3c; color:#fff; padding:8px 16px; border-radius:8px; font-weight:bold; text-decoration:none; margin-top:8px; font-size:12px; box-shadow: 0 4px 12px rgba(255, 60, 60, 0.25);'>🍿 Go to Cinema Portal</a>
+2. Dashboard (Admin Control Console): Provide a link to `/dashboard` or styled button:
+   <a href='/dashboard' class='chat-action-btn' style='display:inline-block; background:#4f46e5; color:#fff; padding:8px 16px; border-radius:8px; font-weight:bold; text-decoration:none; margin-top:8px; font-size:12px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);'>📊 Open Administrator Dashboard</a>
+   Explain that if the dashboard is locked, they can log in using the "Login" button in the top navbar with their administrator credentials. Do NOT print or disclose default administrator usernames or passwords (such as "Admin" or "Admin.123") in the chat response under any circumstance.
+3. Analytics Dashboard: Provide a link to `/analytics` or styled button:
+   <a href='/analytics' class='chat-action-btn' style='display:inline-block; background:#06b6d4; color:#000; padding:8px 16px; border-radius:8px; font-weight:bold; text-decoration:none; margin-top:8px; font-size:12px; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.25);'>📈 View Real-Time Analytics</a>
+   Explain that they must be logged in as an administrator first.
+4. Cinema Map: Offer a custom action button to open the map overlay modal directly:
+   <button onclick="openCinemaMapModal()" class="chat-action-btn" style="display:inline-block; background:#10b981; color:#fff; padding:8px 16px; border-radius:8px; font-weight:bold; border:none; cursor:pointer; margin-top:8px; font-size:12px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);">📍 Open Cinema Map</button>
+   Or instruct them to click "📍 Cinema Map" in the top navigation bar.
+5. Cinema Websites & Showtimes: If the user asks about local cinema websites, booking pages, showtimes, or cinema halls, you must check if they have provided both the **City** and **Country** in their message/context.
+    - If they did NOT provide both, politely ask them to specify both (e.g., "To help you find the correct cinema website and showtimes, could you please specify both the city and country?").
+    - If they specify both the City and Country (matching Enugu, Berlin, Bochum, or Herne in Nigeria/Germany), output the matching embedded website panel AND also provide a direct, styled clickable anchor button pointing to the official external URL to view external showtimes and exterior views:
+      <a href="[Official External Website URL]" target="_blank" class="chat-action-btn" style="display:inline-block; background:#06b6d4; color:#000; padding:8px 16px; border-radius:8px; font-weight:bold; text-decoration:none; margin-top:8px; font-size:12px; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.25);">🌐 Visit Official Website & Exterior</a>
+
+The cities, countries, and cinema mappings are:
+- Enugu, Nigeria:
+  - Genesis Cinema Enugu: Slug `genesis-enugu`, External URL `https://genesiscinemas.com`
+  - WNN Cinema Enugu: Slug `wnn-enugu`, External URL `https://www.google.com/search?q=WNN+Cinema+Enugu+showtimes`
+- Berlin, Germany:
+  - Zoo Palast Berlin: Slug `zoo-palast-berlin`, External URL `https://www.zoopalast.de`
+  - Cubix Alexanderplatz: Slug `cubix-berlin`, External URL `https://www.yorck.de`
+- Bochum, Germany:
+  - Union Filmtheater Bochum: Slug `union-bochum`, External URL `https://www.union-kino.de`
+  - Metropolis Kino Bochum: Slug `metropolis-bochum`, External URL `https://www.metropolis-bochum.de`
+- Herne, Germany:
+  - Filmwelt Herne: Slug `filmwelt-herne`, External URL `https://www.filmwelt-herne.de`
+  - UCI Kinowelt Ruhr Park: Slug `uci-herne`, External URL `https://www.uci-kinowelt.de`
+
+Always output the HTML structure for each matching cinema website, substituting the matching values:
+    <div class="chat-cinema-web-wrapper" style="margin-top:12px; border-radius:12px; overflow:hidden; border:1.5px solid var(--accent); box-shadow: 0 8px 20px rgba(0,0,0,0.5); width:100%;">
+      <div style="background:rgba(15,23,42,0.9); padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.08); font-size:12px; display:flex; justify-content:space-between; align-items:center;">
+        <span style="color:white; font-weight:700;">🌐 [Cinema Name] Website</span>
+        <a href="/cinema_website/[city]/[cinema-slug]" target="_blank" style="color:var(--accent); font-weight:600; text-decoration:none;">Open Embedded External ↗</a>
+      </div>
+      <iframe src="/cinema_website/[city]/[cinema-slug]" style="width:100%; height:320px; border:none; display:block; background:#0c0f17;" title="[Cinema Name] Portal"></iframe>
+    </div>
+
+Always explain in a friendly manner in their query language that they can browse showtimes and view exterior designs directly inside the embedded panel or by clicking the Visit Official Website button.
 """
 
-    messages = [
-        {"role": "system", "content": system_prompt}
-    ] + client_history + [
-        {"role": "user", "content": user_message}
-    ]
+        messages = [
+            {"role": "system", "content": system_prompt}
+        ] + client_history + [
+            {"role": "user", "content": user_message}
+        ]
 
-    try:
         response = client.chat.completions.create(
-            model="gpt-4.1-mini",
+            model=selected_model,
             messages=messages,
             temperature=0.8
         )
@@ -1100,13 +1455,27 @@ CRITICAL FORMATTING INSTRUCTIONS FOR POSTERS & TRAILERS:
         # Apply programmatic fail-safe post-processing filter
         reply = post_process_chat_reply(reply, user_message)
 
+        # Detect the language of the reply to synchronize the frontend dropdown
+        final_lang = detect_language(reply)
+
         return jsonify({
-            "reply": reply.replace("\n", "<br>")
+            "reply": reply.replace("\n", "<br>"),
+            "language": final_lang
         })
 
     except Exception as e:
         print("CHAT ERROR:", e)
-        return jsonify({"reply": "⚠️ OpenAI error"})
+        fallback_messages = {
+            "en": "I didn't quite understand your request, could you please rephrase it?",
+            "es": "No he entendido bien su solicitud, ¿podría reformular la pregunta, por favor?",
+            "de": "Ich habe Ihre Anfrage nicht ganz verstanden, könnten Sie die Frage bitte anders formulieren?",
+            "fr": "Je n'ai pas bien compris votre demande, pourriez-vous reformuler la question, s'il vous plaît ?"
+        }
+        reply = fallback_messages.get(detected_lang, fallback_messages["en"])
+        return jsonify({
+            "reply": reply,
+            "language": detected_lang
+        })
 
 
 # =========================================
@@ -1115,20 +1484,513 @@ CRITICAL FORMATTING INSTRUCTIONS FOR POSTERS & TRAILERS:
 @app.route("/api/login", methods=["POST"])
 def api_login():
     try:
+        from werkzeug.security import check_password_hash, generate_password_hash
+        import sqlite3
+        
         data = request.get_json() or {}
-        user = data.get("username", "")
+        user = data.get("username", "").strip()
         password = data.get("password", "")
         
-        admin_user = os.getenv("ADMIN_USERNAME", "student")
-        admin_pass = os.getenv("ADMIN_PASSWORD", "cinema123")
+        if not user or not password:
+            return jsonify({"success": False, "message": "Username and password are required"})
+            
+        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "movies.db")
+        
+        # Check database for admin credentials
+        conn = sqlite3.connect(db_path)
+        cur = conn.cursor()
+        cur.execute("SELECT password_hash FROM admin_credentials WHERE username = ?", (user,))
+        row = cur.fetchone()
+        conn.close()
+        
+        if row:
+            if check_password_hash(row[0], password):
+                return jsonify({"success": True})
+            else:
+                return jsonify({"success": False, "message": "Invalid username or password"})
+            
+        # Fallback to check default environment variables (only if user does not exist in DB yet)
+        admin_user = os.getenv("ADMIN_USERNAME") or os.getenv("admin_user") or "Admin"
+        admin_pass = os.getenv("ADMIN_PASSWORD") or os.getenv("admin_password") or "Admin.123"
         
         if user == admin_user and password == admin_pass:
+            # Cache hashed credentials in database
+            conn = sqlite3.connect(db_path)
+            cur = conn.cursor()
+            hashed = generate_password_hash(admin_pass)
+            cur.execute("""
+                INSERT OR REPLACE INTO admin_credentials (username, password_hash)
+                VALUES (?, ?)
+            """, (admin_user, hashed))
+            conn.commit()
+            conn.close()
             return jsonify({"success": True})
-        else:
-            return jsonify({"success": False, "message": "Invalid username or password"})
+            
+        return jsonify({"success": False, "message": "Invalid username or password"})
     except Exception as e:
         print("LOGIN ERROR:", e)
-        return jsonify({"success": False, "message": "Internal server login error"})
+        return jsonify({"success": False, "message": f"Login Error: {str(e)}"})
+
+
+# =========================================
+# FORGOT PASSWORD API
+# =========================================
+@app.route("/api/forgot_password", methods=["POST"])
+def api_forgot_password():
+    try:
+        from werkzeug.security import generate_password_hash
+        import sqlite3
+        import random
+        import datetime
+        import smtplib
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        
+        data = request.get_json() or {}
+        username = data.get("username", "").strip()
+        if not username:
+            return jsonify({"success": False, "message": "Username is required."})
+
+        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "movies.db")
+        conn = sqlite3.connect(db_path)
+        cur = conn.cursor()
+        cur.execute("SELECT username FROM admin_credentials WHERE username = ?", (username,))
+        row = cur.fetchone()
+        
+        # Fallback check
+        default_user = os.getenv("ADMIN_USERNAME") or os.getenv("admin_user") or "Admin"
+        if not row and username.lower() == default_user.lower():
+            admin_pass = os.getenv("ADMIN_PASSWORD") or os.getenv("admin_password") or "Admin.123"
+            hashed = generate_password_hash(admin_pass)
+            cur.execute("INSERT OR REPLACE INTO admin_credentials (username, password_hash) VALUES (?, ?)", (default_user, hashed))
+            conn.commit()
+            row = (default_user,)
+
+        if not row:
+            conn.close()
+            return jsonify({"success": False, "message": "Admin username not found."})
+
+        actual_username = row[0]
+        
+        # Generate 6-digit OTP
+        reset_code = f"{random.randint(100000, 999999)}"
+        expiry = (datetime.datetime.now() + datetime.timedelta(minutes=10)).strftime("%Y-%m-%d %H:%M:%S")
+        
+        cur.execute("""
+            UPDATE admin_credentials
+            SET reset_code = ?, reset_expiry = ?
+            WHERE username = ?
+        """, (reset_code, expiry, actual_username))
+        conn.commit()
+        conn.close()
+        
+        # SMTP configurations
+        smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+        smtp_port_raw = os.getenv("SMTP_PORT", "587")
+        try:
+            smtp_port = int(smtp_port_raw)
+        except ValueError:
+            smtp_port = 587
+            
+        smtp_email = os.getenv("SMTP_EMAIL")
+        smtp_password = os.getenv("SMTP_PASSWORD")
+        admin_email = os.getenv("ADMIN_EMAIL") or smtp_email
+        
+        if not smtp_email or not smtp_password:
+            # Local Dev Mock Mode fallback if email credentials not set
+            print(f"\n🔒 [MOCK RESET] SMTP credentials not set. Password Reset OTP for '{actual_username}' is: {reset_code}\n")
+            return jsonify({
+                "success": True, 
+                "message": f"SMTP not configured. (Local Dev Mode) OTP Code is: {reset_code} (printed in server console log)"
+            })
+            
+        # Send actual verification email
+        try:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = "🔒 Admin Password Reset Code"
+            msg["From"] = smtp_email
+            msg["To"] = admin_email
+            
+            html_content = f"""
+            <html>
+              <body style="font-family: Arial, sans-serif; background-color: #09090e; color: #f3f4f6; padding: 30px;">
+                <div style="max-width: 450px; margin: 0 auto; background: #14141d; border: 1px solid #232332; border-radius: 16px; padding: 24px; text-align: center;">
+                  <h2 style="color: #ff3c3c; margin-bottom: 20px;">Admin Password Reset</h2>
+                  <p style="color: #cbd5e1; font-size: 15px;">A password reset request was initiated for the admin account <strong>{actual_username}</strong>.</p>
+                  <div style="font-size: 32px; font-weight: 800; color: #22d3ee; background: rgba(34, 211, 238, 0.1); padding: 16px; border-radius: 12px; margin: 24px 0; letter-spacing: 4px;">
+                    {reset_code}
+                  </div>
+                  <p style="color: #94a3b8; font-size: 12px;">This verification code is valid for 10 minutes. If you did not request this, please ignore this email.</p>
+                </div>
+              </body>
+            </html>
+            """
+            msg.attach(MIMEText(f"Admin Password Reset Code: {reset_code}", "plain"))
+            msg.attach(MIMEText(html_content, "html"))
+            
+            server = smtplib.SMTP(smtp_server, smtp_port)
+            server.starttls()
+            server.login(smtp_email, smtp_password)
+            server.sendmail(smtp_email, admin_email, msg.as_string())
+            server.quit()
+            
+            # Mask email address for response
+            masked_email = admin_email
+            if "@" in admin_email:
+                parts = admin_email.split("@")
+                masked_email = parts[0][:3] + "***@" + parts[1]
+            return jsonify({"success": True, "message": f"Verification code successfully sent to {masked_email}!"})
+        except Exception as smtp_err:
+            print("SMTP DISPATCH ERROR:", smtp_err)
+            return jsonify({
+                "success": True,
+                "message": f"SMTP Dispatch failed: {str(smtp_err)}. (Local Dev Mode) OTP Code is: {reset_code} (printed in server console log)"
+            })
+            
+    except Exception as e:
+        print("FORGOT PASSWORD ERROR:", e)
+        return jsonify({"success": False, "message": f"Forgot password error: {str(e)}"})
+
+
+# =========================================
+# RESET PASSWORD API
+# =========================================
+@app.route("/api/reset_password", methods=["POST"])
+def api_reset_password():
+    try:
+        from werkzeug.security import generate_password_hash
+        import sqlite3
+        import datetime
+        
+        data = request.get_json() or {}
+        username = data.get("username", "").strip()
+        reset_code = data.get("reset_code", "").strip()
+        new_password = data.get("new_password", "").strip()
+        
+        if not username or not reset_code or not new_password:
+            return jsonify({"success": False, "message": "All fields are required."})
+            
+        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "movies.db")
+        conn = sqlite3.connect(db_path)
+        cur = conn.cursor()
+        
+        cur.execute("SELECT reset_code, reset_expiry FROM admin_credentials WHERE username = ?", (username,))
+        row = cur.fetchone()
+        
+        if not row:
+            conn.close()
+            return jsonify({"success": False, "message": "Admin username not found."})
+            
+        db_code, db_expiry = row[0], row[1]
+        
+        if not db_code or db_code != reset_code:
+            conn.close()
+            return jsonify({"success": False, "message": "Invalid verification code."})
+            
+        # Check code expiration
+        if db_expiry:
+            try:
+                expiry_dt = datetime.datetime.strptime(db_expiry, "%Y-%m-%d %H:%M:%S")
+                if datetime.datetime.now() > expiry_dt:
+                    conn.close()
+                    return jsonify({"success": False, "message": "Verification code has expired."})
+            except Exception as dt_err:
+                print("Date parse error:", dt_err)
+                
+        # Hash new password and save
+        hashed = generate_password_hash(new_password)
+        cur.execute("""
+            UPDATE admin_credentials
+            SET password_hash = ?, reset_code = NULL, reset_expiry = NULL
+            WHERE username = ?
+        """, (hashed, username))
+        conn.commit()
+        conn.close()
+        
+        return jsonify({"success": True, "message": "Password successfully reset! You can now log in."})
+    except Exception as e:
+        print("RESET PASSWORD ERROR:", e)
+        return jsonify({"success": False, "message": f"Reset password error: {str(e)}"})
+
+
+# =========================================
+# ADD MOVIE TO CATALOG (ADMIN ROUTE)
+# =========================================
+@app.route("/api/add_catalog_movie", methods=["POST"])
+def api_add_catalog_movie():
+    """
+    API endpoint to add a new movie to the main movie_catalog database table.
+    Expects a POST request with JSON containing:
+      - title (str): The name of the movie (required).
+      - genre (str): The movie genres.
+      - description (str): Brief synopsis of the plot.
+      - poster_url (str): Link to the movie poster.
+      - trailer_url (str): YouTube trailer link.
+    On successful insertion, it automatically populates three default showtimes,
+    three ticket pricing tiers (Standard, IMAX, VIP), and two positive starter
+    classmate/critic reviews to make the movie catalog entry immediately functional.
+    """
+    try:
+        data = request.get_json() or {}
+        title = data.get("title", "").strip()
+        genre = data.get("genre", "").strip()
+        description = data.get("description", "").strip()
+        poster_url = data.get("poster_url", "").strip()
+        trailer_url = data.get("trailer_url", "").strip()
+
+        if not title:
+            return jsonify({"success": False, "message": "Movie title is required."})
+
+        # Save to database catalog
+        import sqlite3
+        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "movies.db")
+        conn = sqlite3.connect(db_path)
+        cur = conn.cursor()
+
+        # Check if movie already exists in catalog
+        cur.execute("SELECT id FROM movie_catalog WHERE LOWER(title) = LOWER(?)", (title,))
+        if cur.fetchone():
+            conn.close()
+            return jsonify({"success": False, "message": f"Movie '{title}' already exists in the catalog."})
+
+        # Insert movie into catalog
+        cur.execute("""
+            INSERT INTO movie_catalog (title, genre, description, poster_url, trailer_url)
+            VALUES (?, ?, ?, ?, ?)
+        """, (title, genre, description, poster_url, trailer_url))
+        
+        movie_id = cur.lastrowid
+
+        # Automatically insert default showtimes
+        import datetime
+        today = datetime.date.today()
+        dates = [
+            today.strftime("%Y-%m-%d"),
+            (today + datetime.timedelta(days=1)).strftime("%Y-%m-%d"),
+            (today + datetime.timedelta(days=2)).strftime("%Y-%m-%d")
+        ]
+        cur.executemany("""
+            INSERT INTO showtimes (movie_id, show_date, show_time, theater)
+            VALUES (?, ?, ?, ?)
+        """, [
+            (movie_id, dates[0], "14:30", "Screen 1 Standard"),
+            (movie_id, dates[1], "18:00", "Screen 2 IMAX"),
+            (movie_id, dates[2], "21:15", "Screen 3 VIP")
+        ])
+
+        # Automatically insert ticket tiers
+        cur.executemany("""
+            INSERT INTO ticket_tiers (movie_id, tier_name, price)
+            VALUES (?, ?, ?)
+        """, [
+            (movie_id, "Standard", 12.0),
+            (movie_id, "IMAX 3D", 18.0),
+            (movie_id, "VIP Lounge", 25.0)
+        ])
+
+        # Automatically insert initial positive starter reviews
+        cur.executemany("""
+            INSERT INTO movie_comments (movie_id, username, comment, rating)
+            VALUES (?, ?, ?, ?)
+        """, [
+            (movie_id, "CinemaCritic", "An absolute masterpiece! Must watch.", 5),
+            (movie_id, "FilmLover99", "Very enjoyable experience. Loved the soundtrack and visuals.", 5)
+        ])
+
+        conn.commit()
+        conn.close()
+
+        # Force download poster locally if possible
+        try:
+            download_local_poster(title, poster_url)
+        except Exception as ex:
+            print("Failed downloading local poster for new catalog entry:", ex)
+
+        return jsonify({"success": True, "message": f"'{title}' successfully added to the catalog!"})
+    except Exception as e:
+        print("ADD CATALOG MOVIE ERROR:", e)
+        return jsonify({"success": False, "message": f"Server Error: {str(e)}"})
+
+
+# =========================================
+# UPDATE MOVIE IN CATALOG (ADMIN ROUTE)
+# =========================================
+@app.route("/api/update_catalog_movie", methods=["POST"])
+def api_update_catalog_movie():
+    try:
+        data = request.get_json() or {}
+        movie_id = data.get("id")
+        title = data.get("title", "").strip()
+        genre = data.get("genre", "").strip()
+        description = data.get("description", "").strip()
+        poster_url = data.get("poster_url", "").strip()
+        trailer_url = data.get("trailer_url", "").strip()
+
+        if not movie_id:
+            return jsonify({"success": False, "message": "Movie ID is required."})
+        if not title:
+            return jsonify({"success": False, "message": "Movie title is required."})
+
+        import sqlite3
+        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "movies.db")
+        conn = sqlite3.connect(db_path)
+        cur = conn.cursor()
+
+        # Update movie in catalog
+        cur.execute("""
+            UPDATE movie_catalog
+            SET title = ?, genre = ?, description = ?, poster_url = ?, trailer_url = ?
+            WHERE id = ?
+        """, (title, genre, description, poster_url, trailer_url, movie_id))
+        
+        # Also clean up and update any corresponding entry in movies table if titles match
+        # (This keeps trailers working in the user watchlists too)
+        clean_trailer = get_clean_embed_trailer(title, trailer_url)
+        cur.execute("""
+            UPDATE movies
+            SET trailer_url = ?
+            WHERE LOWER(title) = LOWER(?)
+        """, (clean_trailer, title))
+
+        conn.commit()
+        conn.close()
+
+        # Force download poster locally if possible
+        try:
+            download_local_poster(title, poster_url)
+        except Exception as ex:
+            print("Failed downloading local poster for updated catalog entry:", ex)
+
+        return jsonify({"success": True, "message": f"'{title}' successfully updated in the catalog!"})
+    except Exception as e:
+        print("UPDATE CATALOG MOVIE ERROR:", e)
+        return jsonify({"success": False, "message": f"Server Error: {str(e)}"})
+
+
+# =========================================
+# AUTOFILL METADATA API
+# =========================================
+def fetch_movie_metadata_online(title, genre=None):
+    import urllib.parse
+    import requests
+    import os
+    
+    metadata = {
+        "title": title,
+        "genre": genre or "",
+        "description": "",
+        "poster_url": "",
+        "trailer_url": ""
+    }
+    
+    omdb_key = os.getenv("OMDB_API_KEY", "f5055ab1")
+    tmdb_key = os.getenv("TMDB_API_KEY", "bdc72992529ba332516d99262db8ca95")
+    
+    # 1. Query OMDb
+    try:
+        omdb_url = f"http://www.omdbapi.com/?t={urllib.parse.quote(title)}&apikey={omdb_key}"
+        r = requests.get(omdb_url, timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            if data.get("Response") != "False":
+                metadata["title"] = data.get("Title", title)
+                if not metadata["genre"]:
+                    metadata["genre"] = data.get("Genre", "")
+                metadata["description"] = data.get("Plot", "")
+                metadata["poster_url"] = data.get("Poster", "")
+    except Exception as e:
+        print("OMDb autofill error:", e)
+        
+    # 2. Query TMDB (for high-res poster and trailers)
+    try:
+        if tmdb_key:
+            search_url = f"https://api.themoviedb.org/3/search/movie?api_key={tmdb_key}&query={urllib.parse.quote(title)}"
+            r = requests.get(search_url, timeout=5)
+            if r.status_code == 200:
+                search_data = r.json()
+                results = search_data.get("results", [])
+                if results:
+                    movie_id = results[0]["id"]
+                    # Use TMDB overview if description is empty or too short
+                    if not metadata["description"] or len(metadata["description"]) < 50:
+                        metadata["description"] = results[0].get("overview", "")
+                    
+                    # Use TMDB poster if OMDb poster is empty or "N/A"
+                    poster_path = results[0].get("poster_path")
+                    if poster_path and (not metadata["poster_url"] or metadata["poster_url"] == "N/A"):
+                        metadata["poster_url"] = f"https://image.tmdb.org/t/p/w500{poster_path}"
+                        
+                    # Get TMDB videos for trailers
+                    videos_url = f"https://api.themoviedb.org/3/movie/{movie_id}/videos?api_key={tmdb_key}"
+                    v_r = requests.get(videos_url, timeout=5)
+                    if v_r.status_code == 200:
+                        videos = v_r.json().get("results", [])
+                        for video in videos:
+                            if video.get("site") == "YouTube" and video.get("type") in ["Trailer", "Teaser"]:
+                                key = video.get("key")
+                                if key:
+                                    metadata["trailer_url"] = f"https://www.youtube.com/watch?v={key}"
+                                    break
+    except Exception as e:
+        print("TMDB autofill error:", e)
+        
+    # 3. Fallback: If description/overview is missing or too short, generate a 2-3 sentence engaging summary using OpenAI
+    desc = metadata.get("description", "").strip()
+    if not desc or desc in ["N/A", ""]:
+        try:
+            prompt = f"Write a brief, engaging, 2-3 sentence movie plot summary/overview for a film titled '{title}'"
+            if genre:
+                prompt += f" of genre '{genre}'"
+            prompt += ". Keep it cinematic and do not include any introductory phrases like 'Here is the summary' or metadata, just output the plot summary directly."
+            
+            response = client.chat.completions.create(
+                model="gpt-4.1-mini",
+                messages=[
+                    {"role": "system", "content": "You are a movie database editor who writes brief, engaging plot summaries."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=150,
+                temperature=0.7
+            )
+            ai_desc = response.choices[0].message.content.strip()
+            if ai_desc:
+                metadata["description"] = ai_desc
+        except Exception as ai_err:
+            print("OpenAI description generation error:", ai_err)
+    elif len(desc) > 300:
+        # If the plot overview is very long, summarize it into 2-3 sentences automatically
+        try:
+            prompt = f"Summarize the following movie plot overview into a brief, engaging, 2-3 sentence summary (max 250 characters):\n\n{desc}"
+            response = client.chat.completions.create(
+                model="gpt-4.1-mini",
+                messages=[
+                    {"role": "system", "content": "You are a movie editor specializing in writing concise, punchy plot summaries."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=120,
+                temperature=0.7
+            )
+            ai_summary = response.choices[0].message.content.strip()
+            if ai_summary:
+                metadata["description"] = ai_summary
+        except Exception as ai_err:
+            print("OpenAI summarization error:", ai_err)
+
+    return metadata
+
+@app.route("/api/autofill_movie", methods=["POST"])
+def api_autofill_movie():
+    try:
+        data = request.get_json() or {}
+        title = data.get("title", "").strip()
+        genre = data.get("genre", "").strip()
+        if not title:
+            return jsonify({"success": False, "message": "Title is required for autofill."})
+            
+        metadata = fetch_movie_metadata_online(title, genre)
+        return jsonify({"success": True, "metadata": metadata})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
 
 
 # =========================================
@@ -1497,22 +2359,12 @@ def dashboard():
     comment_count = 0
     feedbacks = []
     movie_reviews = []
+    catalog_movies = []
     
     try:
         db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "movies.db")
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
-        
-        # Ensure classmate_feedback table exists
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS classmate_feedback (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT,
-                feedback TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        conn.commit()
         
         # Get count of catalog films
         cur.execute("SELECT COUNT(*) FROM movie_catalog")
@@ -1528,34 +2380,16 @@ def dashboard():
             cur.execute("SELECT COUNT(*) FROM movie_comments")
             comment_count = cur.fetchone()[0]
             
-            # Fetch recent movie comments
-            cur.execute("""
-                SELECT mc.username, mc.comment, mc.rating, mc.created_at, c.title AS movie_title
-                FROM movie_comments mc
-                LEFT JOIN movie_catalog c ON mc.movie_id = c.id
-                ORDER BY mc.created_at DESC
-                LIMIT 10
-            """)
-            rows = cur.fetchall()
-            for r in rows:
-                movie_reviews.append({
-                    "username": r[0],
-                    "comment": r[1],
-                    "rating": r[2],
-                    "created_at": r[3],
-                    "movie_title": r[4]
-                })
-        else:
-            comment_count = 0
-            
-        # Fetch classmate feedback
-        cur.execute("SELECT username, feedback, created_at FROM classmate_feedback ORDER BY created_at DESC LIMIT 10")
-        fb_rows = cur.fetchall()
-        for r in fb_rows:
-            feedbacks.append({
-                "username": r[0],
-                "feedback": r[1],
-                "created_at": r[2]
+        # Fetch all catalog movies for editing dropdown
+        cur.execute("SELECT id, title, genre, description, poster_url, trailer_url FROM movie_catalog ORDER BY title ASC")
+        for r in cur.fetchall():
+            catalog_movies.append({
+                "id": r[0],
+                "title": r[1],
+                "genre": r[2],
+                "description": r[3],
+                "poster_url": r[4],
+                "trailer_url": r[5]
             })
             
         conn.close()
@@ -1574,6 +2408,7 @@ def dashboard():
         comment_count=comment_count,
         feedbacks=feedbacks,
         movie_reviews=movie_reviews,
+        catalog_movies=catalog_movies,
         banners=banners,
         country_to_flag=country_to_flag
     )
@@ -1617,6 +2452,166 @@ def submit_classmate_feedback():
 
 
 # =========================================
+# =========================================
+# SIMULATED LOCAL CINEMA WEBSITES (CORS/X-Frame-Options Safe)
+# =========================================
+CINEMAS_DATA = {
+    "enugu": {
+        "genesis-enugu": {
+            "name": "Genesis Cinema Enugu",
+            "address": "Zik Ave, Enugu, Nigeria",
+            "rating": "⭐ 4.4",
+            "website_url": "https://genesiscinemas.com",
+            "movies": [
+                {
+                    "id": 4,
+                    "title": "Interstellar",
+                    "showtimes": ["5:00 PM (Standard)", "8:30 PM (Standard)"]
+                }
+            ]
+        },
+        "wnn-enugu": {
+            "name": "WNN Cinema Enugu",
+            "address": "Independent Layout, Enugu, Nigeria",
+            "rating": "⭐ 4.3",
+            "website_url": "https://www.google.com/search?q=WNN+Cinema+Enugu+showtimes",
+            "movies": [
+                {
+                    "id": 3,
+                    "title": "The Dark Knight",
+                    "showtimes": ["7:45 PM (VIP)"]
+                }
+            ]
+        }
+    },
+    "bochum": {
+        "union-bochum": {
+            "name": "Union Filmtheater Bochum",
+            "address": "Kortumstraße 16, 44787 Bochum, Germany",
+            "rating": "⭐ 4.5",
+            "website_url": "https://www.union-kino.de",
+            "movies": [
+                {
+                    "id": 1,
+                    "title": "Inception",
+                    "showtimes": ["3:00 PM (Standard)", "7:00 PM (Standard)"]
+                }
+            ]
+        },
+        "metropolis-bochum": {
+            "name": "Metropolis Kino Bochum",
+            "address": "Kortumstraße 51, 44787 Bochum, Germany",
+            "rating": "⭐ 4.7",
+            "website_url": "https://www.metropolis-bochum.de",
+            "movies": [
+                {
+                    "id": 5,
+                    "title": "Avatar: The Way of Water",
+                    "showtimes": ["4:00 PM (3D)", "8:00 PM (3D)"]
+                }
+            ]
+        }
+    },
+    "herne": {
+        "filmwelt-herne": {
+            "name": "Filmwelt Herne",
+            "address": "Berliner Platz 11, 44623 Herne, Germany",
+            "rating": "⭐ 4.2",
+            "website_url": "https://www.filmwelt-herne.de",
+            "movies": [
+                {
+                    "id": 4,
+                    "title": "Interstellar",
+                    "showtimes": ["6:30 PM (IMAX)", "9:30 PM (IMAX)"]
+                }
+            ]
+        },
+        "uci-herne": {
+            "name": "UCI Kinowelt Ruhr Park",
+            "address": "Am Einkaufszentrum 22, 44791 Bochum/Herne Border",
+            "rating": "⭐ 4.4",
+            "website_url": "https://www.uci-kinowelt.de",
+            "movies": [
+                {
+                    "id": 3,
+                    "title": "The Dark Knight",
+                    "showtimes": ["5:15 PM (Standard)", "8:45 PM (Standard)"]
+                }
+            ]
+        }
+    },
+    "berlin": {
+        "zoo-palast-berlin": {
+            "name": "Zoo Palast Berlin",
+            "address": "Hardenbergstraße 29a, 10623 Berlin, Germany",
+            "rating": "⭐ 4.8",
+            "website_url": "https://www.zoopalast.de",
+            "movies": [
+                {
+                    "id": 1,
+                    "title": "Inception",
+                    "showtimes": ["4:30 PM (VIP)", "8:00 PM (VIP)"]
+                }
+            ]
+        },
+        "cubix-berlin": {
+            "name": "Cubix Alexanderplatz",
+            "address": "Rathausstraße 1, 10178 Berlin, Germany",
+            "rating": "⭐ 4.6",
+            "website_url": "https://www.yorck.de",
+            "movies": [
+                {
+                    "id": 5,
+                    "title": "Avatar: The Way of Water",
+                    "showtimes": ["3:00 PM (3D)", "7:30 PM (3D)"]
+                }
+            ]
+        }
+    }
+}
+
+@app.route("/cinema_website/<city>/<cinema_slug>")
+def cinema_website(city, cinema_slug):
+    city_key = city.lower().strip()
+    cinema_key = cinema_slug.lower().strip()
+    
+    if city_key not in CINEMAS_DATA or cinema_key not in CINEMAS_DATA[city_key]:
+        return "Cinema Website Not Found", 404
+        
+    cinema_info = CINEMAS_DATA[city_key][cinema_key]
+    
+    import sqlite3
+    db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "movies.db")
+    conn = sqlite3.connect(db_path)
+    cur = conn.cursor()
+    
+    hydrated_movies = []
+    for m in cinema_info["movies"]:
+        cur.execute("SELECT id, title, genre, description, poster_url, trailer_url FROM movie_catalog WHERE id = ?", (m["id"],))
+        row = cur.fetchone()
+        if row:
+            hydrated_movies.append({
+                "id": row[0],
+                "title": row[1],
+                "genre": row[2],
+                "description": row[3],
+                "poster_url": download_local_poster(row[1], row[4]),
+                "showtimes": m["showtimes"],
+                "trailer_url": row[5]
+            })
+    conn.close()
+    
+    cinema_data = {
+        "name": cinema_info["name"],
+        "address": cinema_info["address"],
+        "rating": cinema_info["rating"],
+        "website_url": cinema_info.get("website_url", "#"),
+        "movies": hydrated_movies
+    }
+    
+    return render_template("cinema_website.html", cinema=cinema_data)
+
+
 # DEDICATED REAL-TIME ANALYTICS PAGE (STREAMLIT IFRAME)
 # =========================================
 @app.route("/analytics")

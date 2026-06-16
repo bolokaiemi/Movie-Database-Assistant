@@ -16,10 +16,23 @@
 
 {% block banner_content %}
 <div class="movie-vault-hero">
-    <div class="vault-hero-content">
+    <div class="vault-hero-content" style="display: flex; flex-direction: column; align-items: center; text-align: center; width: 100%;">
         <span class="vault-badge">📋 WATCHLIST MANAGER</span>
         <h1>Your Personal Movie <span>Vault</span></h1>
         <p>Curate your custom cinema collection, audit star ratings, add personal notes, and keep track of your favorite films.</p>
+        
+        <!-- Search bar matching Movie Mania homepage styling -->
+        <div class="search-bar" style="margin-top: 15px;">
+            <input
+                type="text"
+                id="vaultSearch"
+                placeholder="🔍 Search watchlist..."
+                onkeyup="searchVaultMovies()"
+            >
+            <button onclick="searchVaultMovies()">
+                Search
+            </button>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -302,6 +315,18 @@ window.onclick = function(event) {
     modals.forEach((modal, index) => {
         if (event.target == modal) {
             closeOriginalModal(index);
+        }
+}
+
+function searchVaultMovies() {
+    const query = document.getElementById("vaultSearch").value.toLowerCase();
+    const cards = document.querySelectorAll(".movie-card-original");
+    cards.forEach(card => {
+        const title = card.querySelector("h3").textContent.toLowerCase();
+        if (title.includes(query)) {
+            card.style.display = "block";
+        } else {
+            card.style.display = "none";
         }
     });
 }

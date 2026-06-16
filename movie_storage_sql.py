@@ -156,6 +156,7 @@ def create_table():
             movie_id INTEGER,
             qr_code_link TEXT,
             created_at TEXT,
+            status TEXT DEFAULT 'active',
 
             FOREIGN KEY(user_id)
             REFERENCES users(id),
@@ -164,6 +165,13 @@ def create_table():
             REFERENCES movie_catalog(id)
         )
     """)
+    
+    # Run migration to add status column if existing table lacks it
+    try:
+        cursor.execute("ALTER TABLE qr_purchases ADD COLUMN status TEXT DEFAULT 'active'")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
 
     # =========================
     # CHAT MEMORY TABLE
@@ -694,6 +702,43 @@ def add_qr_purchase(
 
     conn.commit()
     conn.close()
+
+
+def cancel_qr_purchase(ticket_code):
+    conn = connect()
+    cur = conn.cursor()
+    cur.execute("""
+        UPDATE qr_purchases
+        SET status = 'cancelled'
+        WHERE qr_code_link = ?
+    """, (ticket_code,))
+    conn.commit()
+    conn.close()
+
+
+def get_qr_purchase_details(ticket_code):
+    conn = connect()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT q.id, q.user_id, q.movie_id, q.qr_code_link, q.created_at, q.status,
+               mc.title
+        FROM qr_purchases q
+        LEFT JOIN movie_catalog mc ON q.movie_id = mc.id
+        WHERE q.qr_code_link = ?
+    """, (ticket_code,))
+    row = cur.fetchone()
+    conn.close()
+    if row:
+        return {
+            "id": row[0],
+            "user_id": row[1],
+            "movie_id": row[2],
+            "ticket_code": row[3],
+            "created_at": row[4],
+            "status": row[5],
+            "movie_title": row[6]
+        }
+    return None
 
 
 # =========================

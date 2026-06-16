@@ -168,6 +168,19 @@ btn.addEventListener('click', () => {
     correctLevel : QRCode.CorrectLevel.H
   });
 
+  // Save active ticket details to sessionStorage
+  saveActiveTicketToSession(movieId, {
+    ticketCode: code,
+    userEmail: userEmail,
+    totalAmount: totalEl.textContent,
+    movieTitle: movieTitle,
+    movieDate: movieDate,
+    movieTime: movieTime,
+    movieScreen: movieScreen,
+    itemsListHtml: receiptList.innerHTML,
+    status: 'active'
+  });
+
   // Gorgeous transition to success state
   // Hide checkout form options
   document.querySelector('.purchase-left-column').style.display = 'none';
@@ -265,3 +278,201 @@ if (showtimeSelect) {
 
 // Run initial calculation
 calculate();
+
+// Initialize active ticket from session storage if exists
+const pathPartsInit = window.location.pathname.split('/');
+const movieIdInit = parseInt(pathPartsInit[pathPartsInit.length - 1]) || 1;
+loadActiveTicketFromSession(movieIdInit);
+
+
+function cancelCurrentBooking() {
+  const ticketCode = document.getElementById('ticketCode').textContent;
+  const userEmail = document.getElementById('userEmail').value.trim();
+
+  if (!ticketCode) {
+    alert("No ticket code found to cancel.");
+    return;
+  }
+
+  if (!confirm("Are you sure you want to cancel your booking and request a full refund?")) {
+    return;
+  }
+
+  const cancelBtn = document.getElementById('cancelBookingBtn');
+  cancelBtn.textContent = "Processing Cancellation...";
+  cancelBtn.disabled = true;
+
+  fetch('/api/cancel_booking', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      ticket_code: ticketCode,
+      email: userEmail
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert("Ticket successfully cancelled and refund processed! ❌");
+      cancelBtn.textContent = "Booking Cancelled & Refunded";
+      cancelBtn.style.color = "#64748b";
+      cancelBtn.style.border = "1px solid rgba(255,255,255,0.08)";
+      
+      // Update ticket badge to CANCELLED in red
+      const badge = document.querySelector('.ticket-badge');
+      if (badge) {
+        badge.textContent = "CANCELLED";
+        badge.style.background = "#ef4444";
+        badge.style.color = "#fff";
+      }
+
+      // Update stored session state to cancelled
+      const pathParts = window.location.pathname.split('/');
+      const movieId = parseInt(pathParts[pathParts.length - 1]) || 1;
+      const stored = sessionStorage.getItem('active_ticket_' + movieId);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        parsed.status = "cancelled";
+        sessionStorage.setItem('active_ticket_' + movieId, JSON.stringify(parsed));
+      }
+
+      // Add a reload button to book again
+      let bookAgainBtn = document.getElementById('bookAgainBtn');
+      if (!bookAgainBtn) {
+        bookAgainBtn = document.createElement('button');
+        bookAgainBtn.id = 'bookAgainBtn';
+        bookAgainBtn.textContent = "🔄 Book Another Ticket";
+        bookAgainBtn.onclick = function() {
+          sessionStorage.removeItem('active_ticket_' + movieId);
+          window.location.reload();
+        };
+        // Apply beautiful styling
+        Object.assign(bookAgainBtn.style, {
+          background: 'var(--accent)',
+          color: 'black',
+          border: 'none',
+          padding: '12px 28px',
+          borderRadius: '10px',
+          fontWeight: '800',
+          fontSize: '14px',
+          cursor: 'pointer',
+          marginTop: '10px',
+          boxShadow: '0 4px 15px rgba(34, 211, 238, 0.25)',
+          transition: 'all 0.3s'
+        });
+        cancelBtn.parentNode.appendChild(bookAgainBtn);
+      }
+    } else {
+      alert("Error: " + data.message);
+      cancelBtn.textContent = "❌ Cancel Ticket & Refund Booking";
+      cancelBtn.disabled = false;
+    }
+  })
+  .catch(err => {
+    console.error("Cancellation failed:", err);
+    alert("Connection failed. Could not process cancellation.");
+    cancelBtn.textContent = "❌ Cancel Ticket & Refund Booking";
+    cancelBtn.disabled = false;
+  });
+}
+
+
+function saveActiveTicketToSession(movieId, ticketData) {
+  sessionStorage.setItem('active_ticket_' + movieId, JSON.stringify(ticketData));
+}
+
+function loadActiveTicketFromSession(movieId) {
+  const stored = sessionStorage.getItem('active_ticket_' + movieId);
+  if (!stored) return;
+
+  try {
+    const data = JSON.parse(stored);
+    
+    // Populate dynamic ticket values
+    document.getElementById('ticketTotalAmount').textContent = data.totalAmount;
+    document.getElementById('ticketCode').textContent = data.ticketCode;
+    
+    document.getElementById('ticketMovieTitle').textContent = data.movieTitle;
+    document.getElementById('ticketDate').textContent = data.movieDate;
+    document.getElementById('ticketTime').textContent = data.movieTime;
+    document.getElementById('ticketScreen').textContent = data.movieScreen;
+    
+    document.getElementById('ticketItemsList').innerHTML = data.itemsListHtml;
+    
+    if (data.userEmail) {
+      document.getElementById('userEmail').value = data.userEmail;
+    }
+    
+    // Generate QR Code
+    const qrContainer = document.getElementById('qrcode');
+    qrContainer.innerHTML = "";
+    new QRCode(qrContainer, {
+      text: data.ticketCode,
+      width: 140,
+      height: 140,
+      colorDark : "#09090e",
+      colorLight : "#ffffff",
+      correctLevel : QRCode.CorrectLevel.H
+    });
+
+    const cancelBtn = document.getElementById('cancelBookingBtn');
+
+    if (data.status === "cancelled") {
+      const badge = document.querySelector('.ticket-badge');
+      if (badge) {
+        badge.textContent = "CANCELLED";
+        badge.style.background = "#ef4444";
+        badge.style.color = "#fff";
+      }
+      if (cancelBtn) {
+        cancelBtn.textContent = "Booking Cancelled & Refunded";
+        cancelBtn.disabled = true;
+        cancelBtn.style.color = "#64748b";
+        cancelBtn.style.border = "1px solid rgba(255,255,255,0.08)";
+      }
+
+      // Add a reload button to book again
+      let bookAgainBtn = document.getElementById('bookAgainBtn');
+      if (!bookAgainBtn) {
+        bookAgainBtn = document.createElement('button');
+        bookAgainBtn.id = 'bookAgainBtn';
+        bookAgainBtn.textContent = "🔄 Book Another Ticket";
+        bookAgainBtn.onclick = function() {
+          sessionStorage.removeItem('active_ticket_' + movieId);
+          window.location.reload();
+        };
+        // Apply beautiful styling
+        Object.assign(bookAgainBtn.style, {
+          background: 'var(--accent)',
+          color: 'black',
+          border: 'none',
+          padding: '12px 28px',
+          borderRadius: '10px',
+          fontWeight: '800',
+          fontSize: '14px',
+          cursor: 'pointer',
+          marginTop: '10px',
+          boxShadow: '0 4px 15px rgba(34, 211, 238, 0.25)',
+          transition: 'all 0.3s'
+        });
+        cancelBtn.parentNode.appendChild(bookAgainBtn);
+      }
+    }
+
+    // Hide checkout form and summary
+    document.querySelector('.purchase-left-column').style.display = 'none';
+    document.getElementById('orderSummaryCard').style.display = 'none';
+    
+    // Center grid layout and show ticket
+    const purchaseGrid = document.querySelector('.purchase-grid');
+    purchaseGrid.style.display = 'flex';
+    purchaseGrid.style.justifyContent = 'center';
+    
+    const ticketContainer = document.getElementById('ticketContainer');
+    ticketContainer.style.display = 'block';
+  } catch (e) {
+    console.error("Error loading active ticket from session:", e);
+  }
+}

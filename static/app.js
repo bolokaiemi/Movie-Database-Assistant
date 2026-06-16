@@ -11,11 +11,21 @@ document.addEventListener("DOMContentLoaded", function () {
     const chat =
         document.getElementById("chat");
 
+    if (chat) {
+        // Automatically scroll to bottom whenever any image, video, iframe or child loads inside the chat
+        chat.addEventListener("load", function () {
+            chat.scrollTop = chat.scrollHeight;
+        }, true);
+    }
+
     const inputEl =
         document.getElementById("input");
 
     let history = [];
     let isVoiceInput = false;
+    let recognition = null;
+    let finalTranscript = "";
+    let activeAbortController = null;
 
     // =========================
     // TOGGLE CHAT (SMOOTH POP-UP)
@@ -35,6 +45,28 @@ document.addEventListener("DOMContentLoaded", function () {
         const popup = document.getElementById("popup");
         if (popup) {
             popup.classList.remove("show");
+        }
+    };
+
+    window.toggleMaximizeChat = function () {
+        const popup = document.getElementById("popup");
+        const maxBtn = document.getElementById("maximizeChatBtn");
+        if (popup) {
+            popup.classList.toggle("maximized");
+            const isMaximized = popup.classList.contains("maximized");
+            if (maxBtn) {
+                maxBtn.innerHTML = isMaximized ? "⤣" : "⤢";
+                maxBtn.title = isMaximized ? "Restore" : "Maximize";
+            }
+            const chatBox = document.getElementById("chat");
+            if (chatBox) {
+                setTimeout(() => {
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }, 50);
+                setTimeout(() => {
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }, 150);
+            }
         }
     };
 
@@ -81,6 +113,12 @@ function addMessage(text, sender) {
     chat.appendChild(msg);
 
     chat.scrollTop = chat.scrollHeight;
+
+    // Failsafe timeouts to keep chat scrolled to bottom as dynamic styles, images, or elements render
+    setTimeout(() => { chat.scrollTop = chat.scrollHeight; }, 50);
+    setTimeout(() => { chat.scrollTop = chat.scrollHeight; }, 150);
+    setTimeout(() => { chat.scrollTop = chat.scrollHeight; }, 350);
+    setTimeout(() => { chat.scrollTop = chat.scrollHeight; }, 750);
 }
     // =========================
     // SHOW TYPING
@@ -129,6 +167,83 @@ function addMessage(text, sender) {
     // SEND MESSAGE
     // =========================
 
+    // =========================
+    // STOP CHATBOT CONTROLLER
+    // =========================
+
+    const stoppedMessages = {
+        en: "⏹️ Response stopped.",
+        es: "⏹️ Respuesta detenida.",
+        de: "⏹️ Antwort angehalten.",
+        fr: "⏹️ Réponse arrêtée."
+    };
+
+    window.updateStopButtonVisibility = function () {
+        const stopChatBtn = document.getElementById("stopChatBtn");
+        if (!stopChatBtn) return;
+
+        const isFetching = (activeAbortController !== null);
+        const isSpeaking = ("speechSynthesis" in window && window.speechSynthesis.speaking);
+        const isTyping = (document.getElementById("typingIndicator") !== null);
+
+        if (isFetching || isSpeaking || isTyping) {
+            stopChatBtn.style.display = "flex";
+        } else {
+            stopChatBtn.style.display = "none";
+        }
+    };
+
+    window.stopChatbot = function () {
+        let stoppedSomething = false;
+
+        // 1. Abort active Fetch
+        if (activeAbortController) {
+            activeAbortController.abort();
+            activeAbortController = null;
+            stoppedSomething = true;
+        }
+
+        // 2. Cancel Speech Synthesis
+        if ("speechSynthesis" in window && window.speechSynthesis.speaking) {
+            window.speechSynthesis.cancel();
+            stoppedSomething = true;
+        }
+
+        // 3. Abort voice recognition if active
+        if (recognition) {
+            try {
+                recognition.abort();
+            } catch (e) {
+                console.log("Recognition abort error:", e);
+            }
+        }
+
+        // 4. Remove Typing Indicator
+        const typing = document.getElementById("typingIndicator");
+        if (typing) {
+            removeTyping();
+            stoppedSomething = true;
+        }
+
+        // 5. Reset voice input state
+        isVoiceInput = false;
+
+        // If we stopped speech or typing indicator manually (fetch abort prints its own message)
+        if (stoppedSomething && !activeAbortController) {
+            const langDropdown = document.getElementById("languageDropdown");
+            const currentLang = langDropdown ? langDropdown.value : "en";
+            const stoppedMsg = stoppedMessages[currentLang] || stoppedMessages["en"];
+            addMessage(stoppedMsg, "bot");
+        }
+
+        // 6. Hide Stop button
+        updateStopButtonVisibility();
+    };
+
+    // =========================
+    // SEND MESSAGE
+    // =========================
+
     window.sendMessage =
         async function () {
 
@@ -139,6 +254,38 @@ function addMessage(text, sender) {
 
         if (!text) return;
 
+        // Abort voice recognition if active to prevent late transcriptions from lingering in the input field
+        if (recognition) {
+            try {
+                recognition.abort();
+            } catch (e) {
+                console.log("Recognition abort error:", e);
+            }
+        }
+        finalTranscript = "";
+
+        // Intercept stop keywords
+        const stopKeywords = [
+            "stop", "stopp", "halt", "silencio", "alto", "parar", "silence", "quiet", "shut up", "shh",
+            "arrête", "arrete", "haltet", "ruhe"
+        ];
+        const cleanText = text.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, "").trim();
+        if (stopKeywords.includes(cleanText)) {
+            stopChatbot();
+            addMessage(text, "user");
+            
+            const langDropdown = document.getElementById("languageDropdown");
+            const currentLang = langDropdown ? langDropdown.value : "en";
+            const stoppedMsg = stoppedMessages[currentLang] || stoppedMessages["en"];
+            
+            setTimeout(() => {
+                addMessage(stoppedMsg, "bot");
+            }, 300);
+            
+            inputEl.value = "";
+            return;
+        }
+
         // USER MESSAGE
 
         addMessage(text, "user");
@@ -148,8 +295,18 @@ function addMessage(text, sender) {
         // SHOW TYPING
 
         showTyping();
+        updateStopButtonVisibility();
+
+        // Cancel any lingering fetch from previous commands
+        if (activeAbortController) {
+            activeAbortController.abort();
+        }
+        activeAbortController = new AbortController();
 
         try {
+
+            const modelEl = document.getElementById("model");
+            const selectedModel = modelEl ? modelEl.value : "gpt-4.1-mini";
 
             const res =
                 await fetch("/chat", {
@@ -163,18 +320,30 @@ function addMessage(text, sender) {
 
                 body: JSON.stringify({
                     message: text,
-                    history: history
-                })
+                    history: history,
+                    model: selectedModel
+                }),
+                signal: activeAbortController.signal
             });
 
+            // Reset active abort controller as fetch completes
+            activeAbortController = null;
             removeTyping();
+            updateStopButtonVisibility();
 
             // SERVER ERROR
 
             if (!res.ok) {
-
+                const langDropdown = document.getElementById("languageDropdown");
+                const currentLang = langDropdown ? langDropdown.value : "en";
+                const fallbackMessages = {
+                    en: "I didn't quite understand your request, could you please rephrase it?",
+                    es: "No he entendido bien su solicitud, ¿podría reformular la pregunta, por favor?",
+                    de: "Ich habe Ihre Anfrage nicht ganz verstanden, könnten Sie die Frage bitte anders formulieren?",
+                    fr: "Je n'ai pas bien compris votre demande, pourriez-vous reformuler la question, s'il vous plaît ?"
+                };
                 addMessage(
-                    "⚠️ Flask route error.",
+                    fallbackMessages[currentLang] || fallbackMessages["en"],
                     "bot"
                 );
 
@@ -183,6 +352,17 @@ function addMessage(text, sender) {
 
             const data =
                 await res.json();
+
+            // Synchronize the interface language if the chatbot responds in a different language
+            if (data.language && (data.language === 'en' || data.language === 'de' || data.language === 'es' || data.language === 'fr')) {
+                const currentDropdownLang = document.getElementById("languageDropdown") ? document.getElementById("languageDropdown").value : "en";
+                if (data.language !== currentDropdownLang) {
+                    console.log(`[Language Sync] Chatbot responded in ${data.language}. Syncing UI dropdown.`);
+                    if (typeof window.applyLanguage === "function") {
+                        window.applyLanguage(data.language);
+                    }
+                }
+            }
 
             addMessage(
                 data.reply,
@@ -210,10 +390,28 @@ function addMessage(text, sender) {
 
             console.log(error);
 
+            activeAbortController = null;
             removeTyping();
+            updateStopButtonVisibility();
 
+            if (error.name === "AbortError") {
+                const langDropdown = document.getElementById("languageDropdown");
+                const currentLang = langDropdown ? langDropdown.value : "en";
+                const stoppedMsg = stoppedMessages[currentLang] || stoppedMessages["en"];
+                addMessage(stoppedMsg, "bot");
+                return;
+            }
+
+            const langDropdown = document.getElementById("languageDropdown");
+            const currentLang = langDropdown ? langDropdown.value : "en";
+            const fallbackMessages = {
+                en: "I didn't quite understand your request, could you please rephrase it?",
+                es: "No he entendido bien su solicitud, ¿podría reformular la pregunta, por favor?",
+                de: "Ich habe Ihre Anfrage nicht ganz verstanden, könnten Sie die Frage bitte anders formulieren?",
+                fr: "Je n'ai pas bien compris votre demande, pourriez-vous reformuler la question, s'il vous plaît ?"
+            };
             addMessage(
-                "⚠️ Server connection failed.",
+                fallbackMessages[currentLang] || fallbackMessages["en"],
                 "bot"
             );
         }
@@ -253,7 +451,6 @@ function addMessage(text, sender) {
     // VOICE RECOGNITION
     // =========================
 
-    let recognition = null;
 
     if (
         "webkitSpeechRecognition" in window ||
@@ -268,38 +465,62 @@ function addMessage(text, sender) {
             new SpeechRecognition();
 
         recognition.lang = "en-US";
+        recognition.continuous = true;
+        recognition.interimResults = true;
 
-        recognition.continuous = false;
+        let silenceTimer = null;
+        const SILENCE_TIMEOUT = 2500; // 2.5 seconds silence timeout to allow for pauses in speech
 
-        recognition.interimResults = false;
-
-        recognition.onstart =
-            function () {
-
-            console.log(
-                "🎤 Voice started"
-            );
+        recognition.onstart = function () {
+            console.log("🎤 Voice started");
+            finalTranscript = "";
+            if (inputEl) inputEl.value = "";
+            if (silenceTimer) clearTimeout(silenceTimer);
+            
+            const micBtn = document.querySelector(".voice");
+            if (micBtn) {
+                micBtn.style.color = "#ff3c3c";
+                micBtn.style.transform = "scale(1.2)";
+                micBtn.style.transition = "transform 0.2s ease";
+            }
         };
 
-        recognition.onresult =
-            function (e) {
+        recognition.onresult = function (e) {
+            let interimTranscript = "";
+            let currentFinal = "";
+            
+            for (let i = e.resultIndex; i < e.results.length; ++i) {
+                if (e.results[i].isFinal) {
+                    currentFinal += e.results[i][0].transcript + " ";
+                } else {
+                    interimTranscript += e.results[i][0].transcript;
+                }
+            }
+            
+            if (currentFinal) {
+                finalTranscript += currentFinal;
+            }
+            
+            if (inputEl) {
+                inputEl.value = (finalTranscript + interimTranscript).trim();
+            }
 
-            const text =
-                e.results[0][0].transcript;
-
-            inputEl.value = text;
-
-            isVoiceInput = true;
-            sendMessage();
+            // Clear the previous silence timer and reset it
+            if (silenceTimer) clearTimeout(silenceTimer);
+            silenceTimer = setTimeout(() => {
+                console.log("Silence timeout reached. Stopping recognition and sending message.");
+                recognition.stop();
+            }, SILENCE_TIMEOUT);
         };
 
-        recognition.onerror =
-            function (e) {
+        recognition.onerror = function (e) {
+            console.log("Voice Error:", e.error);
+            if (silenceTimer) clearTimeout(silenceTimer);
 
-            console.log(
-                "Voice Error:",
-                e.error
-            );
+            // Ignore programmatically aborted recognition sessions
+            if (e.error === "aborted") {
+                return;
+            }
 
             let message = "🎤 Voice recognition failed.";
             if (e.error === "not-allowed") {
@@ -314,18 +535,23 @@ function addMessage(text, sender) {
                 message = `🎤 Voice recognition error (${e.error}). Please try again.`;
             }
 
-            addMessage(
-                message,
-                "bot"
-            );
+            addMessage(message, "bot");
         };
 
-        recognition.onend =
-            function () {
+        recognition.onend = function () {
+            console.log("🎤 Voice ended");
+            
+            const micBtn = document.querySelector(".voice");
+            if (micBtn) {
+                micBtn.style.color = "";
+                micBtn.style.transform = "";
+            }
 
-            console.log(
-                "🎤 Voice ended"
-            );
+            if (silenceTimer) clearTimeout(silenceTimer);
+            
+            if (inputEl) {
+                inputEl.focus();
+            }
         };
     }
 
@@ -342,15 +568,21 @@ function addMessage(text, sender) {
             const langDropdown = document.getElementById("languageDropdown");
             const currentLang = langDropdown ? langDropdown.value : "en";
 
-            if (currentLang === "es") {
-                recognition.lang = "es-ES";
-            } else if (currentLang === "fr") {
-                recognition.lang = "fr-FR";
-            } else if (currentLang === "de") {
-                recognition.lang = "de-DE";
-            } else {
-                recognition.lang = "en-US";
-            }
+            const localeMapping = {
+                en: "en-US",
+                es: "es-ES",
+                fr: "fr-FR",
+                de: "de-DE",
+                it: "it-IT",
+                pt: "pt-PT",
+                nl: "nl-NL",
+                ru: "ru-RU",
+                zh: "zh-CN",
+                ja: "ja-JP",
+                ko: "ko-KR",
+                ar: "ar-SA"
+            };
+            recognition.lang = localeMapping[currentLang] || `${currentLang}-${currentLang.toUpperCase()}`;
 
             isVoiceInput = true;
             recognition.start();
@@ -397,25 +629,54 @@ function addMessage(text, sender) {
                 cleanText
             );
 
+        speech.onstart = function () {
+            if (typeof updateStopButtonVisibility === "function") {
+                updateStopButtonVisibility();
+            }
+        };
+        speech.onend = function () {
+            if (typeof updateStopButtonVisibility === "function") {
+                updateStopButtonVisibility();
+            }
+        };
+        speech.onerror = function () {
+            if (typeof updateStopButtonVisibility === "function") {
+                updateStopButtonVisibility();
+            }
+        };
+
         // Dynamically set language from the selected dropdown value
         const langDropdown = document.getElementById("languageDropdown");
         const currentLang = langDropdown ? langDropdown.value : "en";
 
-        if (currentLang === "es") {
-            speech.lang = "es-ES";
-        } else if (currentLang === "fr") {
-            speech.lang = "fr-FR";
-        } else if (currentLang === "de") {
-            speech.lang = "de-DE";
-        } else {
-            speech.lang = "en-US";
-        }
+        const localeMapping = {
+            en: "en-US",
+            es: "es-ES",
+            fr: "fr-FR",
+            de: "de-DE",
+            it: "it-IT",
+            pt: "pt-PT",
+            nl: "nl-NL",
+            ru: "ru-RU",
+            zh: "zh-CN",
+            ja: "ja-JP",
+            ko: "ko-KR",
+            ar: "ar-SA"
+        };
+        speech.lang = localeMapping[currentLang] || `${currentLang}-${currentLang.toUpperCase()}`;
 
         speech.rate = 1;
 
         window.speechSynthesis.speak(
             speech
         );
+
+        // Update stop button visibility immediately to account for starting state
+        setTimeout(() => {
+            if (typeof updateStopButtonVisibility === "function") {
+                updateStopButtonVisibility();
+            }
+        }, 50);
     }
 
 (() => {
@@ -479,9 +740,9 @@ function addMessage(text, sender) {
 // =========================
 
 window.login = async function () {
-    const userEl = document.getElementById("username");
-    const passEl = document.getElementById("password");
-    if (!userEl || !passEl) return;
+    const userEl = document.getElementById("adminUsername");
+    const passEl = document.getElementById("adminPassword");
+    if (!userEl || !passEl) return false;
 
     const user = userEl.value;
     const pass = passEl.value;
@@ -497,7 +758,7 @@ window.login = async function () {
 
         if (!res.ok) {
             alert("Connection error during login.");
-            return;
+            return false;
         }
 
         const data = await res.json();
@@ -524,12 +785,23 @@ window.login = async function () {
             // Save login state
             localStorage.setItem("cinemaLoggedIn", "true");
             localStorage.setItem("cinemaUser", user);
+            
+            // Close login modal if open
+            if (typeof closeLoginModal === "function") {
+                closeLoginModal();
+            } else {
+                const modal = document.getElementById("loginModal");
+                if (modal) modal.style.display = "none";
+            }
+            return true;
         } else {
             alert(data.message || "Invalid login");
+            return false;
         }
     } catch (error) {
         console.error("Login Error:", error);
         alert("An error occurred during login.");
+        return false;
     }
 };
 
@@ -558,43 +830,9 @@ window.logout = function () {
     const lockedContainer = document.getElementById("analyticsLockedContainer");
     const dashboardContainer = document.getElementById("analyticsDashboardContainer");
     if (lockedContainer) lockedContainer.style.display = "block";
-    if (dashboardContainer) dashboardContainer.style.display = "none";
+    if (dashboardContainer) document.getElementById("analyticsDashboardContainer").style.display = "none";
 };
 
-// =========================
-// FEEDBACK SUBMIT
-// =========================
-
-window.submitFeedback =
-    function () {
-
-    const feedback =
-        document.getElementById(
-            "feedbackText"
-        ).value;
-
-    if (!feedback.trim()) {
-
-        alert(
-            "Please enter feedback."
-        );
-
-        return;
-    }
-
-    console.log(
-        "Feedback Submitted:",
-        feedback
-    );
-
-    alert(
-        "Thank you for your feedback!"
-    );
-
-    document.getElementById(
-        "feedbackText"
-    ).value = "";
-};
 
 // =========================
 // FOCUS ADMIN LOGIN INPUT
@@ -606,7 +844,7 @@ window.focusLogin = function () {
         const modal = document.getElementById('loginModal');
         if (modal) modal.style.display = 'flex';
     }
-    const usernameEl = document.getElementById("username");
+    const usernameEl = document.getElementById("adminUsername");
     if (usernameEl) {
         usernameEl.focus();
     }
@@ -859,7 +1097,8 @@ document.querySelectorAll(".icon-btn").forEach(btn => {
       tagline: "Your personal movie assistant",
       welcome: "🎬 Welcome to CinemaBot!",
       recommendations: "Ask me for movie recommendations...",
-      placeholder: "Ask something..."
+      placeholder: "Ask something...",
+      stop_btn: "🛑 Stop"
     },
     es: {
       brand: "🎬 MovieMania",
@@ -886,7 +1125,8 @@ document.querySelectorAll(".icon-btn").forEach(btn => {
       tagline: "Tu asistente personal de películas",
       welcome: "🎬 ¡Bienvenido a CinemaBot!",
       recommendations: "Pregúntame por recomendaciones de películas...",
-      placeholder: "Pregunta algo..."
+      placeholder: "Pregunta algo...",
+      stop_btn: "🛑 Parar"
     },
     fr: {
       brand: "🎬 MovieMania",
@@ -913,7 +1153,8 @@ document.querySelectorAll(".icon-btn").forEach(btn => {
       tagline: "Votre assistant cinéma personnel",
       welcome: "🎬 Bienvenue sur CinemaBot !",
       recommendations: "Demandez-moi des recommandations de films...",
-      placeholder: "Demander quelque chose..."
+      placeholder: "Demander quelque chose...",
+      stop_btn: "🛑 Arrêter"
     },
     de: {
       brand: "🎬 MovieMania",
@@ -940,17 +1181,51 @@ document.querySelectorAll(".icon-btn").forEach(btn => {
       tagline: "Ihr persönlicher Filmassistent",
       welcome: "🎬 Willkommen bei CinemaBot!",
       recommendations: "Fragen Sie mich nach Filmempfehlungen...",
-      placeholder: "Frage etwas..."
+      placeholder: "Frage etwas...",
+      stop_btn: "🛑 Stopp"
     }
   };
 
   // ===== APPLY LANGUAGE =====
 
   function applyLanguage(language) {
-    const translations = pageTranslations[language];
-    if (!translations) return;
+    // 1. Ensure the language option exists in the dropdowns dynamically (for future languages)
+    [mainLanguageDropdown, languageDropdown].forEach(dropdown => {
+      if (dropdown && !dropdown.querySelector(`option[value="${language}"]`)) {
+        const opt = document.createElement("option");
+        opt.value = language;
+        const langNames = {
+          it: "Italiano",
+          pt: "Português",
+          nl: "Nederlands",
+          ru: "Русский",
+          zh: "中文",
+          ja: "日本語",
+          ko: "한국어",
+          ar: "العربية",
+          pl: "Polski",
+          tr: "Türkçe"
+        };
+        opt.textContent = langNames[language] || language.toUpperCase();
+        dropdown.appendChild(opt);
+      }
+    });
 
-    // 1. Update text elements labeled with [data-translate]
+    // 2. Keep dropdown selectors synchronized
+    if (mainLanguageDropdown) mainLanguageDropdown.value = language;
+    if (languageDropdown) languageDropdown.value = language;
+
+    // 3. Save language selection to localStorage
+    localStorage.setItem("mcChatbotLanguage", language);
+
+    // 4. If translations exist, apply them to the page elements
+    const translations = pageTranslations[language];
+    if (!translations) {
+      console.log(`[Language Sync] No page translations for '${language}', keeping current UI text but synced speech settings.`);
+      return;
+    }
+
+    // 5. Update text elements labeled with [data-translate]
     document.querySelectorAll("[data-translate]").forEach((element) => {
       const key = element.getAttribute("data-translate");
       if (translations[key]) {
@@ -958,7 +1233,7 @@ document.querySelectorAll(".icon-btn").forEach(btn => {
       }
     });
 
-    // 2. Update text elements labeled with legacy [data-mc-text] for backward compatibility
+    // 6. Update text elements labeled with legacy [data-mc-text] for backward compatibility
     document.querySelectorAll("[data-mc-text]").forEach((element) => {
       const key = element.getAttribute("data-mc-text");
       if (translations[key]) {
@@ -966,7 +1241,7 @@ document.querySelectorAll(".icon-btn").forEach(btn => {
       }
     });
 
-    // 3. Update input placeholders labeled with [data-translate-placeholder]
+    // 7. Update input placeholders labeled with [data-translate-placeholder]
     document.querySelectorAll("[data-translate-placeholder]").forEach((element) => {
       const key = element.getAttribute("data-translate-placeholder");
       if (translations[key]) {
@@ -974,19 +1249,15 @@ document.querySelectorAll(".icon-btn").forEach(btn => {
       }
     });
 
-    // 4. Update the chatbot input placeholder legacy style
+    // 8. Update the chatbot input placeholder legacy style
     const chatbotInput = document.getElementById("input");
     if (chatbotInput && translations.placeholder) {
       chatbotInput.placeholder = translations.placeholder;
     }
-
-    // 5. Keep dropdown selectors synchronized
-    if (mainLanguageDropdown) mainLanguageDropdown.value = language;
-    if (languageDropdown) languageDropdown.value = language;
-
-    // 6. Save language selection to localStorage
-    localStorage.setItem("mcChatbotLanguage", language);
   }
+
+  // Export applyLanguage globally so other scripts can synchronize language dropdowns
+  window.applyLanguage = applyLanguage;
 
   // ===== BIND EVENTS ON SELECT CHANGE =====
 

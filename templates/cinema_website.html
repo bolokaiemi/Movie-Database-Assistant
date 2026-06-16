@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ cinema.name }} - Showtimes & Tickets</title>
+    <!-- Modern Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0c0f17;
+            --card-bg: rgba(30, 41, 59, 0.45);
+            --border: rgba(255, 255, 255, 0.08);
+            --accent: #ff3c3c;
+            --accent-glow: rgba(255, 60, 60, 0.3);
+            --cyan: #06b6d4;
+            --text-color: #cbd5e1;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        /* Glassmorphism Header */
+        .cinema-header {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cinema-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent);
+        }
+
+        .cinema-title {
+            margin: 0 0 4px 0;
+            font-size: 20px;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .cinema-meta {
+            font-size: 12.5px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0;
+            flex-wrap: wrap;
+        }
+
+        .cinema-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .rating-badge {
+            color: #ffb703;
+            font-weight: bold;
+        }
+
+        .address-text {
+            color: var(--cyan);
+        }
+
+        /* Movie Screenings Grid */
+        .screening-title-section {
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--accent);
+            margin-bottom: 12px;
+            margin-left: 5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .movies-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .movie-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            gap: 16px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .movie-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 60, 60, 0.25);
+        }
+
+        .movie-poster {
+            width: 80px;
+            height: 120px;
+            border-radius: 10px;
+            object-fit: cover;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .movie-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .movie-header {
+            margin-bottom: 6px;
+        }
+
+        .movie-title {
+            margin: 0 0 4px 0;
+            font-size: 16px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .movie-genre {
+            font-size: 11px;
+            color: var(--cyan);
+            font-weight: 600;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .movie-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.4;
+            margin: 4px 0 10px 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .showtimes-container {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .showtime-btn {
+            background: rgba(255, 60, 60, 0.1);
+            color: var(--text-color);
+            border: 1px solid rgba(255, 60, 60, 0.25);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .showtime-btn:hover {
+            background: var(--accent);
+            color: #000000;
+            border-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent-glow);
+            transform: scale(1.05);
+        }
+
+        /* Embed Footer styling */
+        .embed-footer {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="cinema-header">
+        <h1 class="cinema-title" style="display: flex; width: 100%; align-items: center;">
+            <span>📍 {{ cinema.name }}</span>
+            {% if cinema.website_url and cinema.website_url != '#' %}
+            <a href="{{ cinema.website_url }}" target="_blank" style="margin-left: auto; font-size: 12px; background: rgba(6, 182, 212, 0.15); color: var(--cyan); border: 1px solid rgba(6, 182, 212, 0.3); padding: 4px 10px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; transition: 0.2s;" onmouseover="this.style.background='var(--cyan)'; this.style.color='black';" onmouseout="this.style.background='rgba(6, 182, 212, 0.15)'; this.style.color='var(--cyan)';">🌐 Visit Website</a>
+            {% endif %}
+        </h1>
+        <div class="cinema-meta">
+            <span class="rating-badge">{{ cinema.rating }}</span>
+            <span>&bull;</span>
+            <span class="address-text">{{ cinema.address }}</span>
+        </div>
+    </div>
+
+    <div class="screening-title-section">
+        🎬 Now Showing & Schedules
+    </div>
+
+    <div class="movies-list">
+        {% for movie in cinema.movies %}
+        <div class="movie-card">
+            <img src="{{ movie.poster_url }}" class="movie-poster" alt="{{ movie.title }}" onerror="this.onerror=null; this.src='/static/image/cinema_luxury.png';">
+            <div class="movie-info">
+                <div class="movie-header">
+                    <h2 class="movie-title">{{ movie.title }}</h2>
+                    <p class="movie-genre">{{ movie.genre }}</p>
+                    <p class="movie-desc">{{ movie.description }}</p>
+                </div>
+                <div class="showtimes-container">
+                    {% for time in movie.showtimes %}
+                    <a href="/purchase/{{ movie.id }}" target="_blank" class="showtime-btn">
+                        🎟️ {{ time }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div style="text-align:center; padding: 30px; color: var(--text-muted); font-size:14px;">
+            No films scheduled today.
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="embed-footer">
+        Powered by Stoplight Cinema Portal &copy; 2026
+    </div>
+
+</body>
+</html>

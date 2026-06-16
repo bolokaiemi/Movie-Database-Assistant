@@ -1631,5 +1631,24 @@ header{
     }
 }
 
+/* ===== EMBEDDED CINEMA WEBSITE STYLES ===== */
+.chat-cinema-web-wrapper {
+    margin-top: 12px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1.5px solid var(--accent);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    transition: transform 0.2s ease;
+}
+
+.chat-cinema-web-wrapper:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(255, 60, 60, 0.15);
+}
+
+
 
 

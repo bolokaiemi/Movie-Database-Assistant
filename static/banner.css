@@ -143,6 +143,7 @@
     margin-bottom: 30px;
 
     flex-wrap: wrap;
+    margin-left: 60px; /* Shift to the right to clear circular left arrow button */
 }
 
 .movie-banner-meta span {

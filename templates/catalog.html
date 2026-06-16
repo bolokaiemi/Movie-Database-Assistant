@@ -239,9 +239,76 @@
 
 <div class="catalog-container">
 
-  <h1 class="page-title" style="text-align: center; margin-top: 130px; font-size: 36px; margin-bottom: 60px;">
+  <h1 class="page-title" style="text-align: center; margin-top: 130px; font-size: 36px; margin-bottom: 35px;">
     🎬 Movie Catalog
   </h1>
+
+  <!-- DISSIMILAR CINEMA LOBBY SEARCH BAR -->
+  <style>
+  .cinema-portal-search {
+      background: rgba(20, 20, 20, 0.75);
+      border: 2.5px solid rgba(255, 61, 61, 0.35);
+      border-radius: 12px;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: 580px;
+      margin: 0 auto 55px auto;
+      box-shadow: 0 0 20px rgba(255, 61, 61, 0.08);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .cinema-portal-search:focus-within {
+      border-color: #ff3d3d;
+      box-shadow: 0 0 30px rgba(255, 61, 61, 0.25);
+      transform: scale(1.01);
+  }
+  .cinema-search-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 15px;
+      font-weight: 600;
+      outline: none;
+      font-family: inherit;
+  }
+  .cinema-search-input::placeholder {
+      color: #64748b;
+  }
+  .cinema-search-btn {
+      background: #ff3d3d;
+      color: white;
+      border: none;
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 12.5px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 12px rgba(255, 61, 61, 0.2);
+  }
+  .cinema-search-btn:hover {
+      background: #ff1f1f;
+      box-shadow: 0 0 18px rgba(255, 61, 61, 0.45);
+      transform: translateY(-1px);
+  }
+  </style>
+
+  <div class="cinema-portal-search">
+      <input
+          type="text"
+          class="cinema-search-input"
+          id="cinemaSearch"
+          placeholder="🎬 Search active showtimes & catalog..."
+          onkeyup="searchCatalogMovies()"
+      >
+      <button class="cinema-search-btn" onclick="searchCatalogMovies()">
+          Search
+      </button>
+  </div>
 
   <!-- SINGLE UNIFIED MOVIE GRID -->
   {% set backgrounds = [

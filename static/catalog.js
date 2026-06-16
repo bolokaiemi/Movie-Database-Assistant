@@ -41,3 +41,18 @@ purchaseButtons.forEach(button => {
     });
 
 });
+
+
+function searchCatalogMovies() {
+    const query = document.getElementById("cinemaSearch").value.toLowerCase();
+    const cards = document.querySelectorAll(".movie-card");
+    cards.forEach(card => {
+        const title = card.querySelector(".movie-title").textContent.toLowerCase();
+        // Check if title or any card details contain query
+        if (title.includes(query)) {
+            card.style.display = "flex";
+        } else {
+            card.style.display = "none";
+        }
+    });
+}
