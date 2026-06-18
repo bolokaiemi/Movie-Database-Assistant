@@ -17,12 +17,28 @@
 <div class="container">
     <h1>{{ title }}</h1>
     <p>{{ description }}</p>
-    <a href="{{ presentation_url }}" class="btn" target="_blank">View Presentation</a>
+    <a href="{{ url_for('serve_presentation') }}" class="btn" target="_blank">View Presentation</a>
     <div style="margin-top:20px;">
         <!-- LinkedIn Share -->
         <a class="btn" href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.url_root }}landing" target="_blank">Share on LinkedIn</a>
         <!-- Facebook Share -->
         <a class="btn" href="https://www.facebook.com/sharer/sharer.php?u={{ request.url_root }}landing" target="_blank">Share on Facebook</a>
+        <a class="btn"
+            href="https://twitter.com/intent/tweet?text=Check%20out%20my%20presentation!&url={{ request.url_root }}landing"
+            target="_blank">
+            Share on Twitter
+        </a>
+        <a class="btn"
+            href="https://www.pinterest.com/pin/create/button/?url={{ request.url_root }}landing&description=Check%20out%20my%20presentation!"
+            target="_blank">
+            Share on Pinterest
+        </a>
+        <a class="btn"
+            href="https://api.whatsapp.com/send?text=Check%20out%20my%20presentation!%20{{ request.url_root }}landing"
+            target="_blank">
+            Share on WhatsApp
+            </a>
+
     </div>
 </div>
 </body>

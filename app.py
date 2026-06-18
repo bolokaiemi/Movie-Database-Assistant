@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -612,12 +612,10 @@ def landing_page():
     LinkedIn and Facebook. No database writes are performed – this is a simple
     static page with social‑share links.
     """
-    # Presentation details – customize as needed
     presentation_title = "My Presentation"
     presentation_description = (
         "Help me reach 1,000 reviews! Watch the presentation and share your feedback."
     )
-    # Assuming a PDF or video is stored in the static folder
     presentation_url = url_for('static', filename='presentation.pdf')
     return render_template(
         "landing.html",
@@ -625,6 +623,17 @@ def landing_page():
         description=presentation_description,
         presentation_url=presentation_url,
     )
+
+# =============================================
+# PRESENTATION FILE SERVING
+# =========================================
+@app.route("/presentation")
+def serve_presentation():
+    """Serve the presentation PDF from the static folder."""
+    return send_from_directory(app.static_folder, "presentation.pdf")
+# =========================================
+    return send_from_directory("static", "presentation.pdf")
+# =========================================
 # =========================================
 # API TICKET & SNACK PURCHASE CHECKOUT
 # =========================================
@@ -702,7 +711,7 @@ def send_ticket_email():
             receipt_rows += f"""
             <tr style="font-size: 13px; color: #d1d5db; border-bottom: 1px solid #1f1f2e;">
               <td style="padding: 8px 0; text-align: left;">{name} x{quantity}</td>
-              <td style="padding: 8px 0; text-align: right; font-weight: bold;">${(price * quantity):.2f}</td>
+              <td style="padding: 8px 0; text-align: right; font-weight: bold;">{(price * quantity):.2f}</td>
             </tr>
             """
 
@@ -2597,11 +2606,15 @@ def analytics():
         banners=banners,
         country_to_flag=country_to_flag
     )
-
-
-
-
-
+# =========================================
+# DEBUG: Route listing removed (Flask 3 compatibility)
+# =========================================
+def list_routes():
+    print("\n=== REGISTERED ROUTES ===")
+    for rule in app.url_map.iter_rules():
+        methods = ",".join(sorted(rule.methods))
+        print(f"{rule.rule:30s}  {methods}")
+    print("=========================\n")
 
 # =========================================
 # RUN APP

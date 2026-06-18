@@ -613,15 +613,37 @@ function addMessage(text, sender) {
 
         window.speechSynthesis.cancel();
 
-        // Clean markdown characters from the text before sending to speech engine
-        const cleanText = text
-            .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // Remove links [text](url) -> text
-            .replace(/!\[([^\]]+)\]\([^)]+\)/g, "$1") // Remove images ![alt](url) -> alt
-            .replace(/#+\s+/g, "") // Remove headers
-            .replace(/^\s*>\s+/gm, "") // Remove blockquotes
-            .replace(/^\s*[-*+]\s+/gm, "") // Remove list bullets
-            .replace(/[*_`~]/g, "") // Remove bold, italic, code block, strike markers
-            .replace(/\s+/g, " ") // Normalize multiple spaces
+        // Clean markdown, strip emojis, and improve pronunciation for numbered points
+        let cleanText = text
+            // Remove markdown links and images
+            .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1") // [text](url) → text
+            .replace(/!\[([^\]]+)\]\([^)]*\)/g, "$1") // ![alt](url) → alt
+            .replace(/^\s*[A-Za-z0-9_-]+\s*:\s*/, "")
+            // Basic markdown cleanup
+            .replace(/#+\s+/g, "") // Headers
+            .replace(/^\s*\>\s+/gm, "") // Blockquotes
+            .replace(/^\s*[-*+]\s+/gm, "") // List bullets
+            .replace(/[*_`~]/g, "") // Formatting markers
+            // Remove emojis and other non‑text symbols
+            .replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, "")
+            // Remove bracketed stage‑direction metadata
+            .replace(/\[.*?\]|\(.*?\)|<.*?>/g, "")
+            // Remove forbidden words (case‑insensitive)
+            .replace(/clapboard/gi, "")
+            .replace(/popcorn/gi, "")
+            .replace(/\bmovie\s*camera\b/gi, "")
+            // Replace numbered points like "1." with the spoken word (one, two, three, …)
+            .replace(/\b(\d)\./g, (m, d) => {
+                const map = {"1":"one","2":"two","3":"three","4":"four","5":"five","6":"six","7":"seven","8":"eight","9":"nine"};
+                return map[d] || d;
+            })
+            // Replace plain digit numbers (e.g., "1 " ) with words
+            .replace(/\b(\d)\b/g, (m, d) => {
+                const map = {"1":"one","2":"two","3":"three","4":"four","5":"five","6":"six","7":"seven","8":"eight","9":"nine"};
+                return map[d] || d;
+            })
+            // Remove the term "Clapperboard"
+            .replace(/Clapperboard/gi, "")
             .trim();
 
         const speech =
