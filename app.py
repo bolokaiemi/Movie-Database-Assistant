@@ -246,23 +246,20 @@ def download_local_poster(title, original_url):
     if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
         return local_url
         
-    # Download the image from the internet in a background thread so we never block!
+    # Download the image synchronously to ensure the poster is available when the page renders
     if original_url and original_url.startswith("http"):
-        import threading
-        
-        def download_worker(url, path, p_dir, t_name):
-            try:
-                headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-                res = requests.get(url, headers=headers, timeout=5)
-                if res.status_code == 200:
-                    os.makedirs(p_dir, exist_ok=True)
-                    with open(path, "wb") as f:
-                        f.write(res.content)
-                    print(f"Downloaded local poster asynchronously for: {t_name}")
-            except Exception as ex:
-                print(f"Async poster download error for {t_name}: {ex}")
-
-        threading.Thread(target=download_worker, args=(original_url, filepath, poster_dir, title), daemon=True).start()
+        try:
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            res = requests.get(original_url, headers=headers, timeout=5)
+            if res.status_code == 200:
+                os.makedirs(poster_dir, exist_ok=True)
+                with open(filepath, "wb") as f:
+                    f.write(res.content)
+                print(f"Downloaded local poster synchronously for: {title}")
+            else:
+                print(f"Failed to download poster (status {res.status_code}) for: {title}")
+        except Exception as ex:
+            print(f"Poster download error for {title}: {ex}")
         return local_url
             
     # If download fails or is blocked by school firewall, use a beautiful local placeholder consistently!
@@ -605,6 +602,29 @@ def purchase(movie_id):
     )
 
 
+# =========================================
+# LANDING PAGE FOR PRESENTATION PROMOTION
+# =========================================
+@app.route("/landing")
+def landing_page():
+    """Render a landing page to promote the presentation.
+    The page encourages visitors to review the presentation and share it on
+    LinkedIn and Facebook. No database writes are performed – this is a simple
+    static page with social‑share links.
+    """
+    # Presentation details – customize as needed
+    presentation_title = "My Presentation"
+    presentation_description = (
+        "Help me reach 1,000 reviews! Watch the presentation and share your feedback."
+    )
+    # Assuming a PDF or video is stored in the static folder
+    presentation_url = url_for('static', filename='presentation.pdf')
+    return render_template(
+        "landing.html",
+        title=presentation_title,
+        description=presentation_description,
+        presentation_url=presentation_url,
+    )
 # =========================================
 # API TICKET & SNACK PURCHASE CHECKOUT
 # =========================================
@@ -991,8 +1011,8 @@ TRAILER_CACHE = {}
 
 def get_clean_embed_trailer(title, default_url):
     """
-    Cleans the trailer URL from the database and returns it as a YouTube embed URL.
-    Does NOT connect to external APIs like TMDB. If no trailer is defined, returns empty string.
+    Returns the trailer URL as‑is (no YouTube embed conversion).
+    If no URL is supplied, returns an empty string.
     """
     global TRAILER_CACHE
     cache_key = (title, default_url)
@@ -1002,49 +1022,10 @@ def get_clean_embed_trailer(title, default_url):
     if not default_url or not default_url.strip():
         return ""
 
+    # Strip whitespace and return the URL unchanged
     url = default_url.strip()
-    
-    def extract_yt_key(url_str):
-        if not url_str:
-            return None
-        # Check standard query string watch?v=
-        if "v=" in url_str:
-            parts = url_str.split("v=")
-            for part in parts[1:]:
-                candidate = part.split("&")[0].split("?")[0].split("/")[0]
-                if len(candidate) == 11:
-                    return candidate
-                    
-        # Check path elements like embed/ or v/ or watch/
-        for marker in ["embed/", "v/", "watch/", "shorts/", "youtu.be/"]:
-            if marker in url_str:
-                parts = url_str.split(marker)
-                if len(parts) > 1:
-                    candidate = parts[1].split("?")[0].split("&")[0].split("/")[0]
-                    if len(candidate) == 11:
-                        return candidate
-                        
-        if len(url_str) == 11 and "/" not in url_str:
-            return url_str
-            
-        import re
-        match = re.search(r'(?:v=|embed/|v/|shorts/|youtu\.be/|/)([a-zA-Z0-9_-]{11})(?:\?|&|$|/)', url_str)
-        if match:
-            return match.group(1)
-            
-        return None
-
-    key = extract_yt_key(url)
-    if key:
-        result = f"https://www.youtube.com/embed/{key}"
-        TRAILER_CACHE[cache_key] = result
-        return result
-        
-    if "http" in url:
-        TRAILER_CACHE[cache_key] = url
-        return url
-
-    return ""
+    TRAILER_CACHE[cache_key] = url
+    return url
 
 
 def post_process_chat_reply(reply, user_message):
@@ -1142,10 +1123,7 @@ def post_process_chat_reply(reply, user_message):
 
         def replacer(match):
             url = match.group(1)
-            vid_id = extract_id(url)
-            if vid_id:
-                return f"<div style='margin-top:8px; border-radius:10px; overflow:hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.4);'><iframe width='100%' height='200' src='https://www.youtube.com/embed/{vid_id}' frameborder='0' allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture' allowfullscreen></iframe></div>"
-            return match.group(0)
+            return f"<a href='{url}' target='_blank' style='display:inline-block; margin-top:8px; padding:6px 12px; background:#ff3d3d; color:#fff; border-radius:6px; text-decoration:none;'>Watch Trailer</a>"
 
         text = re.sub(markdown_pattern, replacer, text)
         text = re.sub(html_pattern, replacer, text)
@@ -1155,10 +1133,7 @@ def post_process_chat_reply(reply, user_message):
         
         def plain_replacer(match):
             url = match.group(1)
-            vid_id = extract_id(url)
-            if vid_id:
-                return f"<div style='margin-top:8px; border-radius:10px; overflow:hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.4);'><iframe width='100%' height='200' src='https://www.youtube.com/embed/{vid_id}' frameborder='0' allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture' allowfullscreen></iframe></div>"
-            return match.group(0)
+            return f"<a href='{url}' target='_blank' style='display:inline-block; margin-top:8px; padding:6px 12px; background:#ff3d3d; color:#fff; border-radius:6px; text-decoration:none;'>Watch Trailer</a>"
             
         text = re.sub(plain_pattern, plain_replacer, text)
         return text
@@ -1227,13 +1202,13 @@ def post_process_chat_reply(reply, user_message):
         
     # 4. Programmatic injection if user asked for a trailer/video and it's missing in reply
     asked_for_trailer = any(k in user_msg_lower for k in ["trailer", "video", "play", "watch", "stream"])
-    has_iframe_tag = "<iframe" in reply
+    has_trailer_tag = "Watch Trailer" in reply
     
-    if asked_for_trailer and not has_iframe_tag and matched_movie:
+    if asked_for_trailer and not has_trailer_tag and matched_movie:
         t_url = matched_movie["trailer_url"]
         if t_url:
-            iframe_html = f'<br><div style="margin-top:8px; border-radius:10px; overflow:hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.4);"><iframe width="100%" height="200" src="{t_url}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>'
-            reply += iframe_html
+            trailer_html = f'<br><a href="{t_url}" target="_blank" style="display:inline-block; margin-top:8px; padding:6px 12px; background:#ff3d3d; color:#fff; border-radius:6px; text-decoration:none;">Watch Trailer</a>'
+            reply += trailer_html
         elif matched_movie["id"]:
             m_id = matched_movie["id"]
             fallback_html = f'<br><a href="/movie/{m_id}" class="chat-action-btn" style="display:inline-block; background:#ff3c3c; color:#fff; padding:8px 16px; border-radius:8px; font-weight:bold; text-decoration:none; margin-top:8px; font-size:12px; box-shadow: 0 4px 12px rgba(255, 60, 60, 0.25);">🔍 View Details & Showtimes</a>'
