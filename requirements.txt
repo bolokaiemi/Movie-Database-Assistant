@@ -11,3 +11,4 @@ streamlit~=1.57.0
 numpy~=2.4.2
 plotly~=6.7.0
 langdetect~=1.0.9
+gunicorn
