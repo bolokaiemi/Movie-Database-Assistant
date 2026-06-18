@@ -214,7 +214,13 @@ To demonstrate continuous development and highlight the platform's vision, the f
 * **🤖 Machine Learning Recommendations:** Build a collaborative-filtering movie recommendation engine utilizing database ratings history instead of static queries.
 
 ---
+## 📢 Recent Updates
 
+- Added **Landing Page** (`/landing`) to promote the presentation and capture social shares.
+- Fixed duplicate **/presentation** route and cleaned stray code, restoring proper PDF serving.
+- Updated README with this changelog.
+
+---
 ## ✍️ Authorship & License
 
 * **Authorship:** This project was created and maintained by **Ebi Emmerich-Adehor**.
