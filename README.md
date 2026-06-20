@@ -119,7 +119,7 @@ Separated from the core control panel to ensure speed and focus. Hosts a custom 
 Simply double-click the **`run_project.bat`** file in the root folder. It will automatically initialize both server instances in separate console windows:
 * **Flask Web App URL:** [http://127.0.0.1:5000](http://127.0.0.1:5000)
 * **Streamlit Analytics URL:** [http://127.0.0.1:8501](http://127.0.0.1:8501)
-
+* **Live Demo:** https://movie-database-assistant-1.onrender.com
 ### Option B: Manual Execution
 
 1. **Launch the Flask Web App:**
