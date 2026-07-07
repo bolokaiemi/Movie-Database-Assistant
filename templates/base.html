@@ -44,6 +44,10 @@
 
 
 <link rel="stylesheet" href="{{ url_for('static', filename='comment-section.css') }}">
+    {% block head %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='impressdaten.css') }}">
+{% endblock %}
     <style>
         a {
             text-decoration: none;
@@ -817,6 +821,8 @@
 {% block comedy_content %}{% endblock %}
 {% block horror_content %}{% endblock %}
 {% block sci_fi_content %}{% endblock %}
+{% block impressum_content %}{% endblock %}
+{% block datenschutz_content %}{% endblock %}
 
 
 
@@ -880,7 +886,7 @@
             <p>Year: <span id="footerYear">© 2026 CinemaBot</span></p>
             <p>Today's Date: <span id="footerDate"></span></p>
         </div>
-       <div><a href="{{ url_for('impressum') }}">Impressum</a></div>  <div><a href="{{ url_for('datenschutz') }}">Datenschutzerklärung</a></div>
+       <div><a href="{{ url_for('impressum') }}" style="text-decoration: none;">Impressum</a></div>  <div><a href="{{ url_for('datenschutz') }}" style="text-decoration: none;">Datenschutz</a></div>
     </div>
 </footer>
 
