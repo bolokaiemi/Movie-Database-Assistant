@@ -2616,6 +2616,17 @@ def list_routes():
         print(f"{rule.rule:30s}  {methods}")
     print("=========================\n")
 
+@app.route("/impressum")
+def impressum():
+    return render_template("impressum.html")
+
+
+@app.route("/datenschutz")
+def datenschutz():
+    return render_template("datenschutz.html")
+
+
+
 # =========================================
 # RUN APP
 # =========================================
