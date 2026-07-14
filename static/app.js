@@ -625,7 +625,7 @@ function addMessage(text, sender) {
             .replace(/^\s*[-*+]\s+/gm, "") // List bullets
             .replace(/[*_`~]/g, "") // Formatting markers
             // Remove emojis and other non‑text symbols
-            .replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, "")
+            .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu,'')
             // Remove bracketed stage‑direction metadata
             .replace(/\[.*?\]|\(.*?\)|<.*?>/g, "")
             // Remove forbidden words (case‑insensitive)
